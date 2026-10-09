@@ -1,10 +1,9 @@
 package seedu.whatscooking.command;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -56,11 +55,11 @@ class AddCommandIngredientTest {
             RecordingUi ui = new RecordingUi();
             AddCommand command = new AddCommand("omelette i/" + ingredient);
 
-            assertDoesNotThrow(() -> command.execute(recipes, ui), ingredient);
+            WhatsCookingException exception = assertThrows(
+                    WhatsCookingException.class, () -> command.execute(recipes, ui), ingredient);
 
+            assertTrue(exception.getMessage().contains("Ingredients require"), ingredient);
             assertEquals(0, recipes.size(), ingredient);
-            assertNotNull(ui.error, ingredient);
-            assertTrue(ui.error.contains("Ingredients require"), ingredient);
             assertNull(ui.message, ingredient);
         }
     }
@@ -72,11 +71,11 @@ class AddCommandIngredientTest {
         recipes.add(existing);
         RecordingUi ui = new RecordingUi();
 
-        new AddCommand("omelette i/3 eggs, 0 g cheese st/Cook").execute(recipes, ui);
+        AddCommand command = new AddCommand("omelette i/3 eggs, 0 g cheese st/Cook");
+        assertThrows(WhatsCookingException.class, () -> command.execute(recipes, ui));
 
         assertEquals(1, recipes.size());
         assertSame(existing, recipes.get(0));
-        assertNotNull(ui.error);
         assertNull(ui.message);
     }
 
@@ -86,13 +85,15 @@ class AddCommandIngredientTest {
         RecordingUi errorUi = new RecordingUi();
         RecordingUi successUi = new RecordingUi();
 
-        new AddCommand("invalid i/0 eggs").execute(recipes, errorUi);
+        AddCommand failing = new AddCommand("invalid i/0 eggs");
+        assertThrows(WhatsCookingException.class, () -> failing.execute(recipes, errorUi));
+
         new AddCommand("omelette i/3 eggs").execute(recipes, successUi);
 
         assertEquals(1, recipes.size());
         assertEquals("omelette", recipes.get(0).getTitle());
         assertEquals("3 eggs", recipes.get(0).getIngredients().get(0).getDescription());
-        assertNotNull(errorUi.error);
+        assertNull(errorUi.message);
         assertEquals("omelette added!", successUi.message);
         assertNull(successUi.error);
     }
