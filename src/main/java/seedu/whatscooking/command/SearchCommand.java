@@ -1,5 +1,7 @@
 package seedu.whatscooking.command;
 
+import java.util.ArrayList;
+
 import seedu.whatscooking.WhatsCookingException;
 import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.ui.Ui;
@@ -18,8 +20,24 @@ public class SearchCommand extends Command {
         this.arguments = arguments;
     }
 
+    public ArrayList<Integer> internalExecute(RecipeList recipes) throws WhatsCookingException {
+        ArrayList<Integer> matches = new ArrayList<>();
+
+        for(int i = 0; i < recipes.size(); i++) {
+            if (recipes.get(i).getTitle().contains(arguments)) {
+                matches.add(i);
+            }
+        }
+        return matches;
+    }
+
     @Override
     public void execute(RecipeList recipes, Ui ui) throws WhatsCookingException {
-        throw new WhatsCookingException("search command not yet implemented");
+        ArrayList<Integer> out = internalExecute(recipes);
+        ui.showMessage("Found " + out.size() + " Recipes: ");
+        for (int i = 0; i < out.size(); i++) {
+
+            ui.showMessage(recipes.get(out.get(i)).toString());
+        }
     }
 }
