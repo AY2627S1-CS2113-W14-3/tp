@@ -80,9 +80,14 @@ public class AddCommand extends Command {
         ui.showMessage(getRecipeLabel(recipe) + " added!");
     }
 
-    //Add each comma-separated ingredient, e.g. 3 eggs, 5 tortillas
-    //Return true if every ingredient is valid, false if any empty
-
+    /**
+     * Parses each comma-separated ingredient and adds it to the recipe being built.
+     * Returns false for invalid input so the caller reports an error without saving the recipe.
+     *
+     * @param recipe the recipe being built, which has not been saved to the list yet
+     * @param ingredientText the comma-separated ingredient descriptions
+     * @return true if every ingredient is valid
+     */
     private boolean addIngredients(Recipe recipe, String ingredientText) {
         //split() drops an empty item at the end so "3 eggs, " must be caught separately
         if (ingredientText.trim().isEmpty() || ingredientText.trim().endsWith(",")) {
@@ -95,7 +100,11 @@ public class AddCommand extends Command {
             if (trimmed.isEmpty()) {
                 return false;
             }
-            recipe.addIngredient(new Ingredient(trimmed));
+            try {
+                recipe.addIngredient(new Ingredient(trimmed));
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
         }
         return true;
     }

@@ -1,6 +1,7 @@
 package seedu.whatscooking.command;
 
 import seedu.whatscooking.WhatsCookingException;
+import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.ui.Ui;
 
@@ -20,6 +21,40 @@ public class RetrieveCommand extends Command {
 
     @Override
     public void execute(RecipeList recipes, Ui ui) throws WhatsCookingException {
-        throw new WhatsCookingException("retrieve command not yet implemented");
+        String input = arguments.trim();
+
+        if (input.isEmpty()) {
+            throw new WhatsCookingException("Please enter a recipe number or recipe name.");
+        }
+
+        if (isInteger(input)) {
+
+            int index = Integer.parseInt(input);
+            if (index <= 0) {
+                throw new WhatsCookingException("Recipe number must be positive.");
+            }
+            ui.showRecipe(recipes, index);
+            return;
+        }
+        Recipe recipe = recipes.getByName(input);
+        ui.showRecipe(recipe);
+    }
+
+    /**
+     * Returns true if the given string consists only of digits.
+     *
+     * @param s the string to check
+     * @return true if s is non-empty and all characters are digits
+     */
+    private boolean isInteger(String s) {
+        if (s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            if (!Character.isDigit(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

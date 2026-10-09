@@ -39,6 +39,24 @@ public class RecipeList {
         return recipes.get(index);
     }
 
+    /**
+     * Returns the first recipe whose title matches the given name,
+     * case-insensitively.
+     *
+     * @param name the recipe title to search for
+     * @return the matching recipe
+     * @throws WhatsCookingException if no recipe with that title exists
+     */
+    public Recipe getByName(String name) throws WhatsCookingException {
+        for (Recipe recipe : recipes) {
+            if (recipe.getTitle().equalsIgnoreCase(name)) {
+                return recipe;
+            }
+        }
+        throw new WhatsCookingException("Recipe not found: " + name);
+    }
+
+
     public int size() {
         return recipes.size();
     }
