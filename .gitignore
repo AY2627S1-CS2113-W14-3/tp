@@ -16,5 +16,11 @@ bin/
 # Temp files
 _temp/
 
+# Application log files
+*.log
+
+# Personal Claude Code memory (not shared with team)
+CLAUDE.local.md
+
 /text-ui-test/ACTUAL.TXT
 text-ui-test/EXPECTED-UNIX.TXT
