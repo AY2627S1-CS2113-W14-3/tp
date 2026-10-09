@@ -1,5 +1,6 @@
 package seedu.whatscooking.ui;
 
+import java.util.List;
 import java.util.Scanner;
 
 import seedu.whatscooking.WhatsCookingException;
@@ -71,14 +72,8 @@ public class Ui {
     public void showRecipe(Recipe recipe) {
         showLine();
         System.out.println(recipe);
-        System.out.println("Ingredients:");
-        for (int i = 0; i < recipe.getIngredients().size(); i++) {
-            System.out.println("  " + (i + 1) + ". " + recipe.getIngredients().get(i));
-        }
-        System.out.println("Steps:");
-        for (int i = 0; i < recipe.getSteps().size(); i++) {
-            System.out.println("  " + (i + 1) + ". " + recipe.getSteps().get(i));
-        }
+        printNumberedList("Ingredients:", recipe.getIngredients());
+        printNumberedList("Steps:", recipe.getSteps());
         if (!recipe.getNote().isEmpty()) {
             System.out.println("Note: " + recipe.getNote());
         }
@@ -97,6 +92,8 @@ public class Ui {
      * @throws WhatsCookingException if index does not correspond to a recipe
      */
     public void showRecipe(RecipeList recipes, int index) throws WhatsCookingException {
+        assert index > 0 : "Display numbering is 1-based, so commands must reject indices below 1 before calling";
+
         showRecipe(recipes.get(index - 1));
     }
 
@@ -118,5 +115,20 @@ public class Ui {
             }
         }
         showLine();
+    }
+
+    /**
+     * Prints a heading followed by each item on its own indented line,
+     * numbered from 1. Shared by the ingredient and step lists so the two
+     * are always formatted identically.
+     *
+     * @param heading the label printed above the items, e.g. "Ingredients:"
+     * @param items   the items to print, in display order
+     */
+    private void printNumberedList(String heading, List<?> items) {
+        System.out.println(heading);
+        for (int i = 0; i < items.size(); i++) {
+            System.out.println("  " + (i + 1) + ". " + items.get(i));
+        }
     }
 }

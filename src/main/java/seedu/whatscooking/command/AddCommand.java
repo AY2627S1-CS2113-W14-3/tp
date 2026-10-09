@@ -1,5 +1,6 @@
 package seedu.whatscooking.command;
 
+import seedu.whatscooking.WhatsCookingException;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
@@ -35,7 +36,7 @@ public class AddCommand extends Command {
     }
 
     @Override
-    public void execute(RecipeList recipes, Ui ui) {
+    public void execute(RecipeList recipes, Ui ui) throws WhatsCookingException {
         //Let variable prefix match even when they are the first
         String input = " " + arguments;
 
@@ -48,8 +49,7 @@ public class AddCommand extends Command {
 
         String title = titleSplit[0].trim();
         if (title.isEmpty()) {
-            ui.showError(MESSAGE_WRONG_FORMAT);
-            return;
+            throw new WhatsCookingException(MESSAGE_WRONG_FORMAT);
         }
 
         String type = "";
@@ -61,16 +61,14 @@ public class AddCommand extends Command {
         if (ingredientSplit.length > 1) {
             boolean isValid = addIngredients(recipe, ingredientSplit[1]);
             if (!isValid) {
-                ui.showError(MESSAGE_WRONG_INGREDIENTS);
-                return;
+                throw new WhatsCookingException(MESSAGE_WRONG_INGREDIENTS);
             }
         }
 
         if (stepSplit.length > 1) {
             boolean isValid = addSteps(recipe, stepSplit[1]);
             if (!isValid) {
-                ui.showError(MESSAGE_EMPTY_STEP);
-                return;
+                throw new WhatsCookingException(MESSAGE_EMPTY_STEP);
             }
         }
 

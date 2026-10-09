@@ -4,7 +4,7 @@ import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.ui.Ui;
 
 /**
- * Ends the application. Triggered by the "bye" command word.
+ * Ends the application. Triggered by the "bye" or "exit" command word.
  */
 public class ExitCommand extends Command {
     @Override

@@ -58,4 +58,7 @@ checkstyle {
 
 run {
     standardInput = System.in
+    // Assertions are off by default in the JVM; the test task enables them
+    // already, so turn them on here too and keep both paths consistent.
+    enableAssertions = true
 }
