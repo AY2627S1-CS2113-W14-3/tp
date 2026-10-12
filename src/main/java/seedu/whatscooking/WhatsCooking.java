@@ -1,5 +1,8 @@
 package seedu.whatscooking;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import seedu.whatscooking.command.Command;
 import seedu.whatscooking.command.Parser;
 import seedu.whatscooking.recipe.RecipeList;
@@ -16,7 +19,11 @@ import seedu.whatscooking.ui.Ui;
  * application.
  */
 public class WhatsCooking {
+    private static final Logger logger = AppLogger.getLogger(WhatsCooking.class);
+
     public static void main(String[] args) {
+        logger.info("Starting WhatsCooking");
+
         Ui ui = new Ui();
         RecipeList recipes = new RecipeList();
         ui.showWelcome();
@@ -29,8 +36,11 @@ public class WhatsCooking {
                 command.execute(recipes, ui);
                 isExit = command.isExit();
             } catch (WhatsCookingException e) {
+                logger.log(Level.FINE, "Reported to user: {0}", e.getMessage());
                 ui.showError(e.getMessage());
             }
         }
+
+        logger.info("Exiting WhatsCooking");
     }
 }

@@ -1,6 +1,8 @@
 package seedu.whatscooking.recipe;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents a single recipe: a title, a type (e.g. "dessert", "main"), a
@@ -27,6 +29,9 @@ public class Recipe {
      * @param type  the category of the recipe, e.g. "dessert"
      */
     public Recipe(String title, String type) {
+        assert title != null : "Recipe title should never be null";
+        assert type != null : "Recipe type should never be null; use \"\" when the user gave none";
+
         this.title = title;
         this.type = type;
         this.servingSize = DEFAULT_SERVING_SIZE;
@@ -51,16 +56,30 @@ public class Recipe {
         this.servingSize = servingSize;
     }
 
-    public ArrayList<Ingredient> getIngredients() {
-        return ingredients;
+    /**
+     * Returns the ingredients in the order they were added. The list is
+     * read-only, so callers must go through {@link #addIngredient(Ingredient)}
+     * to change it rather than modifying the returned list directly.
+     *
+     * @return an unmodifiable view of this recipe's ingredients
+     */
+    public List<Ingredient> getIngredients() {
+        return Collections.unmodifiableList(ingredients);
     }
 
     public void addIngredient(Ingredient ingredient) {
         ingredients.add(ingredient);
     }
 
-    public ArrayList<String> getSteps() {
-        return steps;
+    /**
+     * Returns the preparation steps in the order they were added. The list is
+     * read-only, so callers must go through {@link #addStep(String)} to change
+     * it rather than modifying the returned list directly.
+     *
+     * @return an unmodifiable view of this recipe's steps
+     */
+    public List<String> getSteps() {
+        return Collections.unmodifiableList(steps);
     }
 
     public void addStep(String step) {

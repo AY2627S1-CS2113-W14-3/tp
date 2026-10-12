@@ -1,6 +1,7 @@
 package seedu.whatscooking.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,10 +12,8 @@ import seedu.whatscooking.ui.Ui;
 
 /**
  * Tests for {@link AddCommand}. Each test runs one add and then checks the recipe list:
- * valid input adds exactly one recipe, invalid input leaves the list empty.
- * <p>
- * The tests declare {@code throws WhatsCookingException} only because
- * {@link RecipeList#get(int)} can throw; {@link AddCommand} itself never throws.
+ * valid input adds exactly one recipe, invalid input throws
+ * {@link WhatsCookingException} and leaves the list empty.
  */
 class AddCommandTest {
     @Test
@@ -71,23 +70,23 @@ class AddCommandTest {
     }
 
     @Test
-    public void execute_missingTitle_addsNothing() {
-        assertEquals(0, runAdd("").size());
-        assertEquals(0, runAdd(", snack").size());
-        assertEquals(0, runAdd("i/3 eggs").size());
+    public void execute_missingTitle_throwsAndAddsNothing() {
+        assertAddRejected("");
+        assertAddRejected(", snack");
+        assertAddRejected("i/3 eggs");
     }
 
     @Test
-    public void execute_emptyIngredient_addsNothing() {
-        assertEquals(0, runAdd("egg taco i/").size());
-        assertEquals(0, runAdd("egg taco i/3 eggs, , 5 tortillas").size());
-        assertEquals(0, runAdd("egg taco i/3 eggs,").size());
+    public void execute_emptyIngredient_throwsAndAddsNothing() {
+        assertAddRejected("egg taco i/");
+        assertAddRejected("egg taco i/3 eggs, , 5 tortillas");
+        assertAddRejected("egg taco i/3 eggs,");
     }
 
     @Test
-    public void execute_emptyStep_addsNothing() {
-        assertEquals(0, runAdd("egg taco st/").size());
-        assertEquals(0, runAdd("egg taco st/Scramble egg st/ ").size());
+    public void execute_emptyStep_throwsAndAddsNothing() {
+        assertAddRejected("egg taco st/");
+        assertAddRejected("egg taco st/Scramble egg st/ ");
     }
 
     @Test
@@ -98,9 +97,23 @@ class AddCommandTest {
     }
 
     /** Runs {@code add <arguments>} on a fresh, empty list and returns that list. */
-    private static RecipeList runAdd(String arguments) {
+    private static RecipeList runAdd(String arguments) throws WhatsCookingException {
         RecipeList recipes = new RecipeList();
         new AddCommand(arguments).execute(recipes, new Ui());
         return recipes;
+    }
+
+    /**
+     * Asserts that {@code add <arguments>} is rejected: it throws
+     * {@link WhatsCookingException} and leaves the list empty, so a malformed
+     * command never stores a half-built recipe.
+     *
+     * @param arguments the argument string to reject, also used as the failure label
+     */
+    private static void assertAddRejected(String arguments) {
+        RecipeList recipes = new RecipeList();
+        AddCommand command = new AddCommand(arguments);
+        assertThrows(WhatsCookingException.class, () -> command.execute(recipes, new Ui()), arguments);
+        assertEquals(0, recipes.size(), arguments);
     }
 }

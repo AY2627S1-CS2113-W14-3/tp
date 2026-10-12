@@ -1,8 +1,11 @@
 package seedu.whatscooking.recipe;
 
-import seedu.whatscooking.WhatsCookingException;
-
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import seedu.whatscooking.AppLogger;
+import seedu.whatscooking.WhatsCookingException;
 
 /**
  * Holds the recipes the user has added and provides safe access to them.
@@ -13,14 +16,26 @@ import java.util.ArrayList;
  * 1-based display numbering and the 0-based indices used here.
  */
 public class RecipeList {
+    private static final Logger logger = AppLogger.getLogger(RecipeList.class);
+
     private final ArrayList<Recipe> recipes;
 
     public RecipeList() {
         this.recipes = new ArrayList<>();
     }
 
+    /**
+     * Adds a recipe to the end of the list.
+     *
+     * @param recipe the recipe to store; commands are expected to have fully
+     *     validated it before calling this
+     */
     public void add(Recipe recipe) {
+        assert recipe != null : "Commands should reject bad input before adding, so recipe is never null";
+
         recipes.add(recipe);
+        logger.log(Level.FINE, "Added recipe \"{0}\"; list now holds {1}",
+                new Object[]{recipe.getTitle(), recipes.size()});
     }
 
     /**
@@ -33,6 +48,8 @@ public class RecipeList {
      */
     public Recipe get(int index) throws WhatsCookingException {
         if (index < 0 || index >= recipes.size()) {
+            logger.log(Level.FINE, "Rejected out-of-range index {0}; list holds {1}",
+                    new Object[]{index, recipes.size()});
             throw new WhatsCookingException(
                     "Recipe " + (index + 1) + " does not exist; you have " + recipes.size() + " recipe(s).");
         }
