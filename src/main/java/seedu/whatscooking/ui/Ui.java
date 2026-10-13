@@ -1,9 +1,11 @@
 package seedu.whatscooking.ui;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import seedu.whatscooking.WhatsCookingException;
+import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
 
@@ -72,7 +74,11 @@ public class Ui {
     public void showRecipe(Recipe recipe) {
         showLine();
         System.out.println(recipe);
-        printNumberedList("Ingredients:", recipe.getIngredients());
+        List<String> ingredientDescriptions = new ArrayList<>();
+        for (Ingredient ingredient : recipe.getIngredients()) {
+            ingredientDescriptions.add(ingredient.getDisplayDescription());
+        }
+        printNumberedList("Ingredients:", ingredientDescriptions);
         printNumberedList("Steps:", recipe.getSteps());
         if (!recipe.getNote().isEmpty()) {
             System.out.println("Note: " + recipe.getNote());
@@ -95,6 +101,23 @@ public class Ui {
         assert index > 0 : "Display numbering is 1-based, so commands must reject indices below 1 before calling";
 
         showRecipe(recipes.get(index - 1));
+    }
+
+    /**
+     * Shows the updated serving size and ingredient amounts after a successful resize.
+     *
+     * @param recipe the resized recipe
+     * @param previousServingSize the number of servings before the change
+     */
+    public void showModifiedRecipe(Recipe recipe, int previousServingSize) {
+        showLine();
+        System.out.println("Serving size of " + recipe.getTitle() + " has been updated from "
+                + previousServingSize + " to " + recipe.getServingSize() + ".");
+        System.out.println("Updated ingredients:");
+        for (int i = 0; i < recipe.getIngredients().size(); i++) {
+            System.out.println((i + 1) + ". " + recipe.getIngredients().get(i).getDisplayDescription());
+        }
+        showLine();
     }
 
     /**

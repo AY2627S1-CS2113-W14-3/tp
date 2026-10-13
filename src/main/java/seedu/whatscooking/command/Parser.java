@@ -56,6 +56,8 @@ public class Parser {
             return new RetrieveCommand(arguments);  // Person C
         case "search":
             return new SearchCommand(arguments);    // Person D
+        case "modify":
+            return new ModifyCommand(arguments);    // Person E
         default:
             logger.log(Level.WARNING, "Unrecognised command word \"{0}\"", commandWord);
             throw new WhatsCookingException("I don't recognise the command: " + commandWord);
