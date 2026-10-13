@@ -48,6 +48,8 @@ public class Parser {
         case "bye":
         case "exit":
             return new ExitCommand();
+        case "view":
+            return new ViewCommand();
         case "add":
             return new AddCommand(arguments);      // Person B
         case "retrieve":
