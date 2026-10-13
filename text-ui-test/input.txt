@@ -1,0 +1,16 @@
+add Egg Taco, snack i/1 eggs, 2 tortillas, 50 g cheese st/Cook
+modify Egg Taco s/2
+modify Egg Taco s/4
+modify Egg Taco s/0
+retrieve Egg Taco
+modify egg taco s/2
+modify Egg Taco s/2
+modify Unknown Recipe s/4
+modify Egg Taco s/2147483648
+modify Egg Taco
+add Spice mix, seasoning i/0.125 g pepper, 0.1 tsp oil st/Mix
+modify Spice mix s/3
+retrieve Spice mix
+modify Spice mix s/1
+retrieve Spice mix
+bye

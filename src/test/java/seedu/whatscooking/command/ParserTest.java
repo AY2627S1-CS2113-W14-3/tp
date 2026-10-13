@@ -41,6 +41,7 @@ class ParserTest {
         assertInstanceOf(AddCommand.class, Parser.parse("add egg taco, snack"));
         assertInstanceOf(RetrieveCommand.class, Parser.parse("retrieve 1"));
         assertInstanceOf(SearchCommand.class, Parser.parse("search taco"));
+        assertInstanceOf(ModifyCommand.class, Parser.parse("modify egg taco s/2"));
     }
 
     @Test
