@@ -20,7 +20,8 @@ public class Ingredient {
     private static final String INVALID_DESCRIPTION =
             "Use a positive quantity and an ingredient name, e.g. '200 g cheese' or '3 eggs'.";
 
-    private double quantity;
+    /** Exact amount used for scaling; converting to double is reserved for the numeric getter. */
+    private IngredientQuantity quantity;
     private final String unit;
     private final String name;
 
@@ -60,7 +61,7 @@ public class Ingredient {
         }
 
         validateName(parsedName);
-        this.quantity = parsedQuantity;
+        this.quantity = new IngredientQuantity(new BigDecimal(matcher.group(1)));
         this.unit = parsedUnit.isEmpty() ? null : parsedUnit;
         this.name = parsedName;
     }
@@ -76,18 +77,19 @@ public class Ingredient {
     public Ingredient(double quantity, String unit, String name) {
         validateQuantity(quantity);
         validateName(name);
-        this.quantity = quantity;
+        this.quantity = new IngredientQuantity(BigDecimal.valueOf(quantity));
         this.unit = unit == null || unit.isBlank() ? null : unit.strip();
         this.name = name.strip();
     }
 
     /**
-     * Returns the ingredient quantity.
+     * Returns the ingredient quantity as a double for callers that need a numeric value.
+     * Repeating decimals are approximated here; resizing retains the exact quantity internally.
      *
      * @return the quantity
      */
     public double getQuantity() {
-        return quantity;
+        return quantity.doubleValue();
     }
 
     /**
@@ -117,17 +119,45 @@ public class Ingredient {
      */
     public void setQuantity(double quantity) {
         validateQuantity(quantity);
+        this.quantity = new IngredientQuantity(BigDecimal.valueOf(quantity));
+    }
+
+    /**
+     * Applies an exact quantity after the recipe has validated every scaled ingredient.
+     *
+     * @param quantity the positive, finite amount to store
+     */
+    void setQuantity(IngredientQuantity quantity) {
+        validateQuantity(quantity.doubleValue());
         this.quantity = quantity;
     }
 
     /**
-     * Returns the current ingredient description without unnecessary decimal zeroes.
-     * Rebuilds the description so it reflects later quantity changes.
+     * Returns the immutable exact amount for recipe resizing.
+     *
+     * @return the exact ingredient quantity
+     */
+    IngredientQuantity getExactQuantity() {
+        return quantity;
+    }
+
+    /**
+     * Returns the current ingredient description using the same precision rules as console output.
      *
      * @return the quantity, optional unit and name
      */
     public String getDescription() {
-        String amount = BigDecimal.valueOf(quantity).stripTrailingZeros().toPlainString();
+        return getDisplayDescription();
+    }
+
+    /**
+     * Displays finite decimals in full, rounding only repeating decimals to at most two places.
+     * Keeps the exact stored quantity unchanged for later resizing.
+     *
+     * @return the formatted quantity, optional unit and ingredient name
+     */
+    public String getDisplayDescription() {
+        String amount = quantity.toDisplayString();
         return amount + " " + (unit == null ? "" : unit + " ") + name;
     }
 
