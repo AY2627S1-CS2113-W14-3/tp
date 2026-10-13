@@ -65,6 +65,7 @@ public class RecipeList {
      * @throws WhatsCookingException if no recipe with that title exists
      */
     public Recipe getByName(String name) throws WhatsCookingException {
+        assert name != null : "Name should not be null";
         String target = name.trim();
         for (Recipe recipe : recipes) {
             if (recipe.getTitle().trim().equalsIgnoreCase(target)) {
@@ -84,7 +85,8 @@ public class RecipeList {
      * @throws WhatsCookingException if index is out of bounds
      */
     public Recipe delete(int index) throws WhatsCookingException {
-        if (index < 0 || index >= recipes.size()) {
+        assert index >= 0 : "Caller should pass a 0-based index";
+        if (index >= recipes.size()) {
             logger.log(Level.FINE, "Rejected delete at out-of-range index {0}; list holds {1}",
                     new Object[]{index, recipes.size()});
             throw new WhatsCookingException(
@@ -105,6 +107,7 @@ public class RecipeList {
      * @throws WhatsCookingException if no recipe with that title exists
      */
     public Recipe deleteByName(String name) throws WhatsCookingException {
+        assert name != null : "Name should not be null";
         Recipe recipe = getByName(name);
         recipes.remove(recipe);
         logger.log(Level.FINE, "Deleted recipe \"{0}\" by name; list now holds {1}",
