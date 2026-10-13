@@ -47,6 +47,23 @@ ____________________________________________________________
 
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
 
+### Searching for recipes: `search`
+Searches recipes using a filter for either the recipe name or its ingredients.
+
+Format: `search f/{name/ingredient}/{KEYWORD}`
+
+* Use `f/name/KEYWORD` to match `KEYWORD` against recipe names.
+* Use `f/ingredient/KEYWORD` to match `KEYWORD` against ingredient names.
+* Matching is case-sensitive and supports partial matches.
+* The filter type and keyword are required. The filter must be either `name` or `ingredient`.
+
+Examples:
+
+* `search f/name/omelette` finds recipes whose names contain `omelette`.
+* `search f/ingredient/chicken` finds recipes containing an ingredient whose name contains `chicken`.
+
+Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer? 
@@ -58,3 +75,4 @@ ____________________________________________________________
 {Give a 'cheat sheet' of commands here}
 
 * Add todo `todo n/TODO_NAME d/DEADLINE`
+* Search recipes `search f/{name/ingredient}/{KEYWORD}`
