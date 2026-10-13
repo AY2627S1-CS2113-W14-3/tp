@@ -65,14 +65,52 @@ public class RecipeList {
      * @throws WhatsCookingException if no recipe with that title exists
      */
     public Recipe getByName(String name) throws WhatsCookingException {
+        String target = name.trim();
         for (Recipe recipe : recipes) {
-            if (recipe.getTitle().equalsIgnoreCase(name)) {
+            if (recipe.getTitle().trim().equalsIgnoreCase(target)) {
                 return recipe;
             }
         }
-        throw new WhatsCookingException("Recipe not found: " + name);
+        logger.log(Level.FINE, "Rejected unknown title \"{0}\"; list holds {1}",
+                new Object[]{target, recipes.size()});
+        throw new WhatsCookingException("Recipe not found: " + target);
     }
 
+    /**
+     * Removes the recipe at the given 0-based index and returns it.
+     *
+     * @param index 0-based position of the recipe
+     * @return the recipe that was removed
+     * @throws WhatsCookingException if index is out of bounds
+     */
+    public Recipe delete(int index) throws WhatsCookingException {
+        if (index < 0 || index >= recipes.size()) {
+            logger.log(Level.FINE, "Rejected delete at out-of-range index {0}; list holds {1}",
+                    new Object[]{index, recipes.size()});
+            throw new WhatsCookingException(
+                    "Recipe " + (index + 1) + " does not exist; you have " + recipes.size() + " recipe(s).");
+        }
+        Recipe removed = recipes.remove(index);
+        logger.log(Level.FINE, "Deleted recipe \"{0}\"; list now holds {1}",
+                new Object[]{removed.getTitle(), recipes.size()});
+        return removed;
+    }
+
+    /**
+     * Removes the first recipe whose title matches the given name,
+     * case-insensitively, and returns it.
+     *
+     * @param name the recipe title to delete
+     * @return the recipe that was removed
+     * @throws WhatsCookingException if no recipe with that title exists
+     */
+    public Recipe deleteByName(String name) throws WhatsCookingException {
+        Recipe recipe = getByName(name);
+        recipes.remove(recipe);
+        logger.log(Level.FINE, "Deleted recipe \"{0}\" by name; list now holds {1}",
+                new Object[]{recipe.getTitle(), recipes.size()});
+        return recipe;
+    }
 
     public int size() {
         return recipes.size();

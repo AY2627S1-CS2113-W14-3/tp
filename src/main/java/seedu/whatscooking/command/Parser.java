@@ -53,7 +53,9 @@ public class Parser {
         case "add":
             return new AddCommand(arguments);      // Person B
         case "retrieve":
-            return new RetrieveCommand(arguments);  // Person C
+            return new RetrieveCommand(arguments);
+        case "delete":
+            return new DeleteCommand(arguments);   // Person C
         case "search":
             return new SearchCommand(arguments);    // Person D
         case "modify":
