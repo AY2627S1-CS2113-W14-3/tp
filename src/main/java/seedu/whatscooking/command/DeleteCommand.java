@@ -29,6 +29,9 @@ public class DeleteCommand extends Command {
 
     @Override
     public void execute(RecipeList recipes, Ui ui) throws WhatsCookingException {
+        assert recipes != null : "RecipeList should not be null";
+        assert ui != null : "Ui should not be null";
+
         String input = arguments.trim();
         logger.log(Level.FINE, "Executing delete with input \"{0}\"", input);
 
@@ -46,10 +49,13 @@ public class DeleteCommand extends Command {
                 throw new WhatsCookingException(
                         "Recipe number must be positive.");
             }
+            assert index >= 1 : "index should be at least 1 after validation";
             deleted = recipes.delete(index - 1);
         } else {
             deleted = recipes.deleteByName(input);
         }
+
+        assert deleted != null : "Deleted recipe should not be null";
         logger.log(Level.FINE, "Deleted recipe \"{0}\"; list now holds {1}",
                 new Object[]{deleted.getTitle(), recipes.size()});
         ui.showMessage("Deleted: " + deleted);
