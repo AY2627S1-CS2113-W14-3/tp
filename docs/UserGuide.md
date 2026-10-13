@@ -47,6 +47,23 @@ ____________________________________________________________
 
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
 
+### Viewing all recipes: `view`
+
+Lists every recipe added so far, showing each one's name, type and serving size. Takes no arguments.
+
+Format: `view`
+
+Example output:
+
+```
+____________________________________________________________
+1. Egg Fried Rice (dinner, serves 1)
+2. Pancakes (breakfast, serves 1)
+____________________________________________________________
+```
+
+If no recipes have been added yet, this prints `No recipes found.` instead.
+
 ### Modifying a recipe: `modify`
 
 Changes the serving size of an existing recipe and automatically scales all ingredient quantities proportionally.
@@ -126,4 +143,5 @@ Possible errors:
 {Give a 'cheat sheet' of commands here}
 
 * Add todo `todo n/TODO_NAME d/DEADLINE`
+* View all recipes `view`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
