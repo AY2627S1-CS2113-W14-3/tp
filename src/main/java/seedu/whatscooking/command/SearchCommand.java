@@ -69,20 +69,26 @@ public class SearchCommand extends Command {
         }
 
         boolean matches(seedu.whatscooking.recipe.Recipe recipe) {
-            if (type == FilterType.NAME) {
-                return recipe.getTitle().contains(keyword);
+            switch (type) {
+                case NAME:
+                    return recipe.getTitle().toLowerCase().contains(keyword.toLowerCase());
+                case INGREDIENT:
+                    for (Ingredient ingredient : recipe.getIngredients()) {
+                        if (ingredient.getName().toLowerCase().contains(keyword.toLowerCase())) {
+                            return true;
+                        }
+                    }
+                    return false;
+                default:
+                    throw new IllegalStateException("Unexpected filter type: " + type);
             }
-            for (Ingredient ingredient : recipe.getIngredients()) {
-                if (ingredient.getName().contains(keyword)) {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 
     @Override
     public void execute(RecipeList recipes, Ui ui) throws WhatsCookingException {
+        assert recipes != null : "The application must supply its recipe list";
+        assert ui != null : "The application must supply its UI";
         ArrayList<Integer> out = internalExecute(recipes);
         ui.showMessage("Found " + out.size() + " Recipes: ");
         for (int i = 0; i < out.size(); i++) {
