@@ -52,8 +52,59 @@ public class Recipe {
         return servingSize;
     }
 
+    /**
+     * Sets the number of servings without scaling ingredient quantities.
+     * Use {@link #scaleToServingSize(int)} to resize an existing recipe.
+     *
+     * @param servingSize the positive number of servings
+     * @throws IllegalArgumentException if the serving size is not positive
+     */
     public void setServingSize(int servingSize) {
+        validateServingSize(servingSize);
         this.servingSize = servingSize;
+    }
+
+    /**
+     * Scales every ingredient by the ratio of new servings to current servings.
+     * Checks all results before updating anything, so a failed resize preserves
+     * the entire recipe. Ingredient names, units and other recipe details stay the same.
+     *
+     * @param newServingSize the positive target number of servings
+     * @throws IllegalArgumentException if the serving size is not positive, or a
+     *     scaled quantity cannot be stored as a positive, finite number
+     */
+    public void scaleToServingSize(int newServingSize) {
+        validateServingSize(newServingSize);
+        assert servingSize > 0 : "A recipe must have a positive serving size before scaling";
+        if (newServingSize == servingSize) {
+            return;
+        }
+
+        IngredientQuantity[] scaledQuantities = new IngredientQuantity[ingredients.size()];
+        for (int i = 0; i < ingredients.size(); i++) {
+            IngredientQuantity scaledQuantity = ingredients.get(i).getExactQuantity()
+                    .scale(servingSize, newServingSize);
+            double numericQuantity = scaledQuantity.doubleValue();
+            if (!Double.isFinite(numericQuantity) || numericQuantity <= 0) {
+                throw new IllegalArgumentException(
+                        "Cannot scale recipe: an ingredient quantity would be too large or too small.");
+            }
+            scaledQuantities[i] = scaledQuantity;
+        }
+
+        for (int i = 0; i < ingredients.size(); i++) {
+            ingredients.get(i).setQuantity(scaledQuantities[i]);
+        }
+        servingSize = newServingSize;
+    }
+
+    /**
+     * Rejects a serving size that cannot describe a usable recipe.
+     */
+    private static void validateServingSize(int servingSize) {
+        if (servingSize <= 0) {
+            throw new IllegalArgumentException("Serving size must be a positive integer.");
+        }
     }
 
     /**
