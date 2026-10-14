@@ -51,13 +51,13 @@ public class SearchTest {
     }
 
     @Test
-    public void internalExecute_searchIsCaseSensitive_doesNotMatchDifferentCase()
+    public void internalExecute_searchIsCaseInsensitive_matchesDifferentCase()
             throws WhatsCookingException {
         RecipeList recipes = createListWithOneRecipe();
 
         ArrayList<Integer> matches = new SearchCommand("f/name/chicken").internalExecute(recipes);
 
-        assertTrue(matches.isEmpty());
+        assertEquals(java.util.List.of(0), matches);
     }
 
     @Test
@@ -104,6 +104,40 @@ public class SearchTest {
         recipes.add(soup);
 
         ArrayList<Integer> matches = new SearchCommand("f/ingredient/chicken").internalExecute(recipes);
+
+        assertEquals(java.util.List.of(0), matches);
+    }
+
+    @Test
+    public void internalExecute_multipleFilters_requiresEveryFilterToMatch()
+            throws WhatsCookingException {
+        Recipe pasta = new Recipe("Chicken Pasta", "main");
+        pasta.addIngredient(new Ingredient("200 g chicken"));
+        Recipe curry = new Recipe("Chicken Curry", "main");
+        curry.addIngredient(new Ingredient("2 tomatoes"));
+        Recipe soup = new Recipe("Vegetable Soup", "main");
+        soup.addIngredient(new Ingredient("chicken stock"));
+        RecipeList recipes = new RecipeList();
+        recipes.add(pasta);
+        recipes.add(curry);
+        recipes.add(soup);
+
+        ArrayList<Integer> matches = new SearchCommand(
+                "f/name/Chicken f/ingredient/chicken").internalExecute(recipes);
+
+        assertEquals(java.util.List.of(0), matches);
+    }
+
+    @Test
+    public void internalExecute_multipleFilters_allowsExtraWhitespace()
+            throws WhatsCookingException {
+        Recipe recipe = new Recipe("Chicken Pasta", "main");
+        recipe.addIngredient(new Ingredient("chicken"));
+        RecipeList recipes = new RecipeList();
+        recipes.add(recipe);
+
+        ArrayList<Integer> matches = new SearchCommand(
+                "  f/name/chicken   f/ingredient/chicken  ").internalExecute(recipes);
 
         assertEquals(java.util.List.of(0), matches);
     }
