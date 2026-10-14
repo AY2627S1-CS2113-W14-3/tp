@@ -1,6 +1,7 @@
 package seedu.whatscooking.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 
 import seedu.whatscooking.WhatsCookingException;
+import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.ui.Ui;
@@ -23,7 +25,7 @@ public class SearchTest {
     public void testSearchCommandTrue() throws WhatsCookingException {
         RecipeList oneRecipeList = createListWithOneRecipe();
 
-        SearchCommand search = new SearchCommand("Chicken");
+        SearchCommand search = new SearchCommand("f/name/Chicken");
         assertTrue(search.internalExecute(oneRecipeList).size() == 1);
     }
 
@@ -31,7 +33,7 @@ public class SearchTest {
     public void testSearchCommandFail() throws WhatsCookingException {
         RecipeList oneRecipeList = createListWithOneRecipe();
 
-        SearchCommand search = new SearchCommand("Juice");
+        SearchCommand search = new SearchCommand("f/name/Juice");
         assertTrue(search.internalExecute(oneRecipeList).size() == 0);
     }
 
@@ -43,7 +45,7 @@ public class SearchTest {
         recipes.add(new Recipe("Vegetable Soup", "main"));
         recipes.add(new Recipe("Chicken Curry", "main"));
 
-        ArrayList<Integer> matches = new SearchCommand("Chicken").internalExecute(recipes);
+        ArrayList<Integer> matches = new SearchCommand("f/name/Chicken").internalExecute(recipes);
 
         assertEquals(java.util.List.of(0, 2), matches);
     }
@@ -53,27 +55,26 @@ public class SearchTest {
             throws WhatsCookingException {
         RecipeList recipes = createListWithOneRecipe();
 
-        ArrayList<Integer> matches = new SearchCommand("chicken").internalExecute(recipes);
+        ArrayList<Integer> matches = new SearchCommand("f/name/chicken").internalExecute(recipes);
 
         assertTrue(matches.isEmpty());
     }
 
     @Test
-    public void internalExecute_emptyKeyword_matchesEveryRecipe() throws WhatsCookingException {
+    public void internalExecute_emptyKeyword_throwsException() {
         RecipeList recipes = new RecipeList();
         recipes.add(new Recipe("Chicken Pasta", "main"));
         recipes.add(new Recipe("Vegetable Soup", "main"));
 
-        ArrayList<Integer> matches = new SearchCommand("").internalExecute(recipes);
-
-        assertEquals(java.util.List.of(0, 1), matches);
+        assertThrows(WhatsCookingException.class,
+                () -> new SearchCommand("f/name/").internalExecute(recipes));
     }
 
     @Test
     public void internalExecute_emptyRecipeList_returnsNoMatches() throws WhatsCookingException {
         RecipeList recipes = new RecipeList();
 
-        ArrayList<Integer> matches = new SearchCommand("Chicken").internalExecute(recipes);
+        ArrayList<Integer> matches = new SearchCommand("f/name/Chicken").internalExecute(recipes);
 
         assertTrue(matches.isEmpty());
     }
@@ -85,10 +86,38 @@ public class SearchTest {
         recipes.add(new Recipe("Vegetable Soup", "main"));
         RecordingUi ui = new RecordingUi();
 
-        new SearchCommand("Chicken").execute(recipes, ui);
+        new SearchCommand("f/name/Chicken").execute(recipes, ui);
 
         assertEquals(java.util.List.of("Found 1 Recipes: ", "Chicken Pasta (main, serves 1)"),
                 ui.messages);
+    }
+
+    @Test
+    public void internalExecute_ingredientFilter_matchesIngredientName()
+            throws WhatsCookingException {
+        RecipeList recipes = new RecipeList();
+        Recipe pasta = new Recipe("Pasta", "main");
+        pasta.addIngredient(new Ingredient("200 g chicken"));
+        recipes.add(pasta);
+        Recipe soup = new Recipe("Soup", "main");
+        soup.addIngredient(new Ingredient("2 tomatoes"));
+        recipes.add(soup);
+
+        ArrayList<Integer> matches = new SearchCommand("f/ingredient/chicken").internalExecute(recipes);
+
+        assertEquals(java.util.List.of(0), matches);
+    }
+
+    @Test
+    public void internalExecute_invalidFilter_throwsException() {
+        RecipeList recipes = createListWithOneRecipe();
+
+        assertThrows(WhatsCookingException.class,
+                () -> new SearchCommand("Chicken").internalExecute(recipes));
+        assertThrows(WhatsCookingException.class,
+                () -> new SearchCommand("f/category/Chicken").internalExecute(recipes));
+        assertThrows(WhatsCookingException.class,
+                () -> new SearchCommand("f/name").internalExecute(recipes));
     }
 
     private static class RecordingUi extends Ui {
