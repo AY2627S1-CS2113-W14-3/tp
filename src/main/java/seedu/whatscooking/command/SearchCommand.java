@@ -20,11 +20,18 @@ public class SearchCommand extends Command {
     }
 
     public ArrayList<Integer> internalExecute(RecipeList recipes) throws WhatsCookingException {
-        Filter filter = parseFilter();
+        ArrayList<Filter> filters = parseFilters();
         ArrayList<Integer> matches = new ArrayList<>();
 
         for(int i = 0; i < recipes.size(); i++) {
-            if (filter.matches(recipes.get(i))) {
+            boolean matchesAllFilters = true;
+            for (Filter filter : filters) {
+                if (!filter.matches(recipes.get(i))) {
+                    matchesAllFilters = false;
+                    break;
+                }
+            }
+            if (matchesAllFilters) {
                 matches.add(i);
             }
         }
@@ -32,25 +39,35 @@ public class SearchCommand extends Command {
     }
 
     /** Parses and validates the user-provided filter. */
-    private Filter parseFilter() throws WhatsCookingException {
-        if (!arguments.startsWith(FILTER_PREFIX)) {
+    private ArrayList<Filter> parseFilters() throws WhatsCookingException {
+        String trimmedArguments = arguments.trim();
+        if (trimmedArguments.isEmpty()) {
             throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
         }
 
-        String[] parts = arguments.split("/", 3);
-        if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()) {
-            throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
-        }
+        // A filter does not contain spaces, so whitespace is a separator between filters.
+        String[] filterStrings = trimmedArguments.split("\\s+");
+        ArrayList<Filter> filters = new ArrayList<>();
+        for (String filterString : filterStrings) {
+            if (!filterString.startsWith(FILTER_PREFIX)) {
+                throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
+            }
+            String[] parts = filterString.split("/", 3);
+            if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()) {
+                throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
+            }
 
-        FilterType type;
-        if (parts[1].equals("name")) {
-            type = FilterType.NAME;
-        } else if (parts[1].equals("ingredient")) {
-            type = FilterType.INGREDIENT;
-        } else {
-            throw new WhatsCookingException("Search filter must be either name or ingredient.");
+            FilterType type;
+            if (parts[1].equals("name")) {
+                type = FilterType.NAME;
+            } else if (parts[1].equals("ingredient")) {
+                type = FilterType.INGREDIENT;
+            } else {
+                throw new WhatsCookingException("Search filter must be either name or ingredient.");
+            }
+            filters.add(new Filter(type, parts[2]));
         }
-        return new Filter(type, parts[2]);
+        return filters;
     }
 
     private enum FilterType {
