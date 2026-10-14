@@ -116,7 +116,7 @@ public class SearchTest {
         Recipe curry = new Recipe("Chicken Curry", "main");
         curry.addIngredient(new Ingredient("2 tomatoes"));
         Recipe soup = new Recipe("Vegetable Soup", "main");
-        soup.addIngredient(new Ingredient("chicken stock"));
+        soup.addIngredient(new Ingredient("2 chicken stock"));
         RecipeList recipes = new RecipeList();
         recipes.add(pasta);
         recipes.add(curry);
@@ -132,7 +132,7 @@ public class SearchTest {
     public void internalExecute_multipleFilters_allowsExtraWhitespace()
             throws WhatsCookingException {
         Recipe recipe = new Recipe("Chicken Pasta", "main");
-        recipe.addIngredient(new Ingredient("chicken"));
+        recipe.addIngredient(new Ingredient("1 chicken"));
         RecipeList recipes = new RecipeList();
         recipes.add(recipe);
 

@@ -111,10 +111,10 @@ public class SearchCommand extends Command {
                     new Object[]{type, keyword, recipe.getTitle()});
             switch (type) {
                 case NAME:
-                    return recipe.getTitle().trim().equalsIgnoreCase(keyword);
+                    return recipe.getTitle().toLowerCase().contains(keyword.toLowerCase());
                 case INGREDIENT:
                     for (Ingredient ingredient : recipe.getIngredients()) {
-                        if (ingredient.getName().trim().equalsIgnoreCase(keyword)) {
+                        if (ingredient.getName().toLowerCase().contains(keyword.toLowerCase())) {
                             return true;
                         }
                     }
