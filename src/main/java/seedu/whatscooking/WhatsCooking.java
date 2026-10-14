@@ -22,7 +22,6 @@ public class WhatsCooking {
     private static final Logger logger = AppLogger.getLogger(WhatsCooking.class);
 
     public static void main(String[] args) {
-        assert false : "dummy assertion set to fail";
         logger.info("Starting WhatsCooking");
 
         Ui ui = new Ui();

@@ -1,7 +1,6 @@
 package seedu.whatscooking.command;
 
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +59,8 @@ public class SearchCommand extends Command {
         String trimmedArguments = arguments.trim();
         if (trimmedArguments.isEmpty()) {
             logger.log(Level.FINE, "Rejected search: no filter found");
-            throw new WhatsCookingException("Please provide at least one search filter in the form f/{field}/{keyword}.");
+            throw new WhatsCookingException(
+                "Please provide at least one search filter in the form f/{field}/{keyword}.");
         }
 
         // A filter does not contain spaces, so whitespace is a separator between filters.
@@ -109,19 +109,20 @@ public class SearchCommand extends Command {
         boolean matches(Recipe recipe) {
             logger.log(Level.FINE, "Using filter: type={0}, keyword={1} on recipe {2}",
                     new Object[]{type, keyword, recipe.getTitle()});
+
             switch (type) {
-                case NAME:
-                    return recipe.getTitle().toLowerCase().contains(keyword.toLowerCase());
-                case INGREDIENT:
-                    for (Ingredient ingredient : recipe.getIngredients()) {
-                        if (ingredient.getName().toLowerCase().contains(keyword.toLowerCase())) {
-                            return true;
-                        }
+            case NAME:
+                return recipe.getTitle().toLowerCase().contains(keyword.toLowerCase());
+            case INGREDIENT:
+                for (Ingredient ingredient : recipe.getIngredients()) {
+                    if (ingredient.getName().toLowerCase().contains(keyword.toLowerCase())) {
+                        return true;
                     }
-                    return false;
-                default:
-                    logger.log(Level.FINE, "Rejected search filter: unexpected type {0}", type);
-                    throw new IllegalStateException("Unexpected filter type: " + type);
+                }
+                return false;
+            default:
+                logger.log(Level.FINE, "Rejected search filter: unexpected type {0}", type);
+                throw new IllegalStateException("Unexpected filter type: " + type);
             }
         }
     }
