@@ -48,19 +48,22 @@ ____________________________________________________________
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
 
 ### Searching for recipes: `search`
-Searches recipes using a filter for either the recipe name or its ingredients.
+Searches recipes using one or more filters for the recipe name and/or its ingredients.
 
-Format: `search f/{name/ingredient}/{KEYWORD}`
+Format: `search f/{name/ingredient}/{KEYWORD} [f/{name/ingredient}/{KEYWORD} ...]`
 
-* Use `f/name/KEYWORD` to match `KEYWORD` against recipe names.
-* Use `f/ingredient/KEYWORD` to match `KEYWORD` against ingredient names.
-* Matching is case-sensitive and supports partial matches.
+* Use `f/name/KEYWORD` to match `KEYWORD` against a recipe name.
+* Use `f/ingredient/KEYWORD` to match `KEYWORD` against an ingredient name.
+* Matching is case-insensitive and compares the complete name or ingredient text.
+* Multiple filters are combined with AND logic: a recipe must satisfy every filter.
+* Separate filters with spaces. Extra spaces before, between, or after filters are allowed.
 * The filter type and keyword are required. The filter must be either `name` or `ingredient`.
 
 Examples:
 
-* `search f/name/omelette` finds recipes whose names contain `omelette`.
-* `search f/ingredient/chicken` finds recipes containing an ingredient whose name contains `chicken`.
+* `search f/name/Omelette` finds the recipe whose name is `Omelette`, ignoring letter case.
+* `search f/ingredient/chicken` finds recipes with an ingredient named `chicken`, ignoring letter case.
+* `search f/name/Chicken f/ingredient/chicken` finds recipes whose name is `Chicken` and which contain an ingredient named `chicken`.
 
 Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
 ### Viewing all recipes: `view`
