@@ -151,11 +151,17 @@ Possible errors:
   Error: Serving size must be a positive integer.
   ```
 
+## Saving the data
+
+Your recipes are saved automatically to `data/whatscooking.txt` after every command. There is no need to save manually.
+
+The next time you start the app, your recipes are loaded back from that file automatically.
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer? 
 
-**A**: {your answer here}
+**A**: Copy the `data/whatscooking.txt` file from your old computer to the same location (the folder where the app's jar file is) on your new computer.
 
 ## Command Summary
 

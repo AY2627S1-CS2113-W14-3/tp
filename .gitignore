@@ -19,6 +19,9 @@ _temp/
 # Application log files
 *.log
 
+# Saved recipe data
+/data/
+
 # Personal Claude Code memory (not shared with team)
 CLAUDE.local.md
 
