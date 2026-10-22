@@ -141,5 +141,3 @@ public class RecipeList {
         return recipes.isEmpty();
     }
 }
-
-
