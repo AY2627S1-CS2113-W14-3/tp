@@ -115,7 +115,6 @@ public class RecipeList {
         return recipe;
     }
 
-    //added by wunicorn21 for add command
     /**
      * Returns whether any recipe already uses the given title, ignoring case
      * and surrounding spaces.

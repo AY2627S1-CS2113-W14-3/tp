@@ -39,8 +39,6 @@ class RecipeListTest {
         assertThrows(WhatsCookingException.class, () -> recipes.get(0));
     }
 
-    //added by wunicorn21 for addcommand
-
     @Test
     public void containsTitle_matchesIgnoringCaseAndSpaces() {
         RecipeList recipes = new RecipeList();
