@@ -18,6 +18,7 @@ _temp/
 
 # Application log files
 *.log
+*.log.*
 
 # Personal Claude Code memory (not shared with team)
 CLAUDE.local.md
