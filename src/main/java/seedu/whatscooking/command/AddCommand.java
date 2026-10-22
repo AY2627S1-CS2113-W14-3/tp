@@ -1,18 +1,22 @@
 package seedu.whatscooking.command;
 
+import static seedu.whatscooking.command.RecipeInputParser.INGREDIENT_PREFIX;
+import static seedu.whatscooking.command.RecipeInputParser.NOTE_PREFIX;
+import static seedu.whatscooking.command.RecipeInputParser.SERVINGS_PREFIX;
+import static seedu.whatscooking.command.RecipeInputParser.STEP_PREFIX;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import seedu.whatscooking.AppLogger;
 import seedu.whatscooking.WhatsCookingException;
-import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.ui.Ui;
 
 /**
  * Adds a new recipe to the list from one line of input:
- * {@code add TITLE[, TYPE] [i/INGREDIENTS] [st/STEP]... [n/NOTE]}.
+ * {@code add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENTS] [st/STEP]... [n/NOTE]}.
  * <p>
  * The whole line is validated before anything is saved, so a malformed
  * command never leaves a half-built recipe in the list.
@@ -20,31 +24,18 @@ import seedu.whatscooking.ui.Ui;
 public class AddCommand extends Command {
     private static final Logger logger = AppLogger.getLogger(AddCommand.class);
 
-    //Each prefix starts with a space so that "i/" inside a word (e.g. "wasabi/") is not matched
-    private static final String INGREDIENT_PREFIX = " i/";
-    private static final String STEP_PREFIX = " st/";
-    private static final String NOTE_PREFIX = " n/";
-
     private static final String MESSAGE_WRONG_FORMAT =
             "WRONG FORMAT! Add requires "
-            + "\"add RECIPE_TITLE[, TYPE] [i/INGREDIENTS] [st/STEP]... [n/NOTE]\" "
-            + "e.g. add egg taco, snack i/3 eggs, 5 tortillas st/Scramble egg st/Put egg in tortilla n/Serve hot";
-
-    private static final String MESSAGE_WRONG_INGREDIENTS =
-            "Wrong format! Ingredients require "
-            + "\"QUANTITY INGREDIENT, QUANTITY INGREDIENT\" e.g. 3 eggs, 5 tortillas";
-
-    private static final String MESSAGE_EMPTY_STEP = "A step cannot be empty. e.g. Scramble egg in pan until yellow";
-    private static final String MESSAGE_EMPTY_TYPE =
-            "The type after the comma cannot be empty. e.g. add egg taco, snack";
-    private static final String MESSAGE_EMPTY_NOTE = "A note cannot be empty. e.g. n/Best eaten hot";
-    private static final String MESSAGE_DUPLICATE_INGREDIENTS =
-            "Only one i/ is allowed. List all ingredients after it, separated by commas.";
+                    + "\"add RECIPE_TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENTS] [st/STEP]... [n/NOTE]\" "
+                    + "e.g. add egg taco, snack s/2 i/3 eggs, 5 tortillas st/Scramble egg st/Put egg in tortilla";
+    private static final String MESSAGE_DUPLICATE_TITLE =
+            "A recipe called \"%s\" already exists. Use a different title, or edit the existing recipe.";
+    private static final String MESSAGE_DUPLICATE_SERVINGS = "Only one s/ is allowed per recipe.";
+    private static final String MESSAGE_SERVINGS_NOT_AFTER_TITLE =
+            "The serving size (s/) must come right after the title and type, before i/, st/ and n/.";
     private static final String MESSAGE_DUPLICATE_NOTE = "Only one n/ is allowed per recipe.";
     private static final String MESSAGE_NOTE_NOT_LAST =
             "The note (n/) must come last, after all ingredients and steps.";
-    private static final String MESSAGE_INGREDIENTS_AFTER_STEPS =
-            "Ingredients (i/) must come before steps (st/).";
 
     private final String arguments;
 
@@ -71,32 +62,41 @@ public class AddCommand extends Command {
         String[] noteSplit = input.split(NOTE_PREFIX, 2);
         //Cut off everything from the first " st/" onwards: [before steps, steps]
         String[] stepSplit = noteSplit[0].split(STEP_PREFIX, 2);
-        //Cut off the ingredients: [title and type, ingredients]
+        //Cut off the ingredients: [title, type and servings, ingredients]
         String[] ingredientSplit = stepSplit[0].split(INGREDIENT_PREFIX, 2);
+        //Cut off the serving size: [title and type, servings]
+        String[] servingsSplit = ingredientSplit[0].split(SERVINGS_PREFIX, 2);
         //Split the title from the type at the first comma: [title, type]
-        String[] titleSplit = ingredientSplit[0].split(",", 2);
+        String[] titleSplit = servingsSplit[0].split(",", 2);
 
-        String title = titleSplit[0].trim();
-        if (title.isEmpty()) {
+        if (titleSplit[0].isBlank()) {
             logger.log(Level.INFO, "Add rejected: missing title");
             throw new WhatsCookingException(MESSAGE_WRONG_FORMAT);
+        }
+        String title = RecipeInputParser.parseTitle(titleSplit[0]);
+        if (recipes.containsTitle(title)) {
+            logger.log(Level.INFO, "Add rejected: duplicate title \"{0}\"", title);
+            throw new WhatsCookingException(String.format(MESSAGE_DUPLICATE_TITLE, title));
         }
 
         String type = "";
         if (titleSplit.length > 1) {
-            type = titleSplit[1].trim();
-            if (type.isEmpty()) {
-                throw new WhatsCookingException(MESSAGE_EMPTY_TYPE);
-            }
+            type = RecipeInputParser.parseType(titleSplit[1]);
         }
         Recipe recipe = new Recipe(title, type);
 
+        if (servingsSplit.length > 1) {
+            recipe.setServingSize(parseServings(servingsSplit[1]));
+        }
+
         if (ingredientSplit.length > 1) {
-            addIngredients(recipe, ingredientSplit[1]);
+            rejectMisplacedServings(ingredientSplit[1]);
+            RecipeInputParser.addIngredients(recipe, ingredientSplit[1]);
         }
 
         if (stepSplit.length > 1) {
-            addSteps(recipe, stepSplit[1]);
+            rejectMisplacedServings(stepSplit[1]);
+            RecipeInputParser.addSteps(recipe, stepSplit[1]);
         }
 
         if (noteSplit.length > 1) {
@@ -113,65 +113,28 @@ public class AddCommand extends Command {
     }
 
     /**
-     * Parses each comma-separated ingredient and adds it to the recipe being built.
+     * Returns the serving size typed after {@code s/}.
      *
-     * @param recipe the recipe being built, which has not been saved to the list yet
-     * @param ingredientText the comma-separated ingredient descriptions
-     * @throws WhatsCookingException if any ingredient is missing or malformed
+     * @param servingsText everything after the first " s/" and before " i/"
+     * @return the positive serving size
+     * @throws WhatsCookingException if s/ is repeated or the value is not a positive whole number
      */
-    private void addIngredients(Recipe recipe, String ingredientText) throws WhatsCookingException {
-        if (ingredientText.contains(INGREDIENT_PREFIX)) {
-            throw new WhatsCookingException(MESSAGE_DUPLICATE_INGREDIENTS);
+    private int parseServings(String servingsText) throws WhatsCookingException {
+        if ((" " + servingsText).contains(SERVINGS_PREFIX)) {
+            throw new WhatsCookingException(MESSAGE_DUPLICATE_SERVINGS);
         }
-        //split() drops an empty item at the end, so "3 eggs, " must be caught separately
-        if (ingredientText.trim().isEmpty() || ingredientText.trim().endsWith(",")) {
-            throw new WhatsCookingException(MESSAGE_WRONG_INGREDIENTS);
-        }
-
-        for (String ingredient : ingredientText.split(",")) {
-            String trimmed = ingredient.trim();
-            if (trimmed.isEmpty()) {
-                throw new WhatsCookingException(MESSAGE_WRONG_INGREDIENTS);
-            }
-            try {
-                recipe.addIngredient(new Ingredient(trimmed));
-            } catch (IllegalArgumentException e) {
-                //Name the bad ingredient and pass on Ingredient's specific reason (e.g. unsupported unit)
-                logger.log(Level.INFO, "Add rejected: bad ingredient \"{0}\"", trimmed);
-                throw new WhatsCookingException("Invalid ingredient \"" + trimmed + "\": " + e.getMessage()
-                        + System.lineSeparator() + MESSAGE_WRONG_INGREDIENTS);
-            }
-        }
+        return RecipeInputParser.parseServingSize(servingsText);
     }
 
     /**
-     * Adds each step in order, e.g. {@code Scramble egg st/Put egg in tortilla}.
-     * Each loop takes the text up to the next " st/" as one step.
+     * Rejects an {@code s/} typed after the ingredients or steps have started.
      *
-     * @param recipe the recipe being built
-     * @param stepText everything after the first " st/"
-     * @throws WhatsCookingException if any step is empty or ingredients appear after the steps
+     * @param text the ingredient or step text to check
+     * @throws WhatsCookingException if the text contains " s/"
      */
-    private void addSteps(Recipe recipe, String stepText) throws WhatsCookingException {
-        if (stepText.contains(INGREDIENT_PREFIX)) {
-            throw new WhatsCookingException(MESSAGE_INGREDIENTS_AFTER_STEPS);
-        }
-
-        String remaining = stepText;
-        boolean hasMoreSteps = true;
-        while (hasMoreSteps) {
-            String[] parts = remaining.split(STEP_PREFIX, 2);
-            String step = parts[0].trim();
-            if (step.isEmpty()) {
-                throw new WhatsCookingException(MESSAGE_EMPTY_STEP);
-            }
-            recipe.addStep(step);
-
-            if (parts.length > 1) {
-                remaining = parts[1];
-            } else {
-                hasMoreSteps = false;
-            }
+    private void rejectMisplacedServings(String text) throws WhatsCookingException {
+        if (text.contains(SERVINGS_PREFIX)) {
+            throw new WhatsCookingException(MESSAGE_SERVINGS_NOT_AFTER_TITLE);
         }
     }
 
@@ -187,14 +150,11 @@ public class AddCommand extends Command {
         if (paddedNote.contains(NOTE_PREFIX)) {
             throw new WhatsCookingException(MESSAGE_DUPLICATE_NOTE);
         }
-        if (paddedNote.contains(STEP_PREFIX) || paddedNote.contains(INGREDIENT_PREFIX)) {
+        if (paddedNote.contains(STEP_PREFIX) || paddedNote.contains(INGREDIENT_PREFIX)
+                || paddedNote.contains(SERVINGS_PREFIX)) {
             throw new WhatsCookingException(MESSAGE_NOTE_NOT_LAST);
         }
-        String note = noteText.trim();
-        if (note.isEmpty()) {
-            throw new WhatsCookingException(MESSAGE_EMPTY_NOTE);
-        }
-        return note;
+        return RecipeInputParser.parseNote(noteText);
     }
 
     /** Returns "title, type", or just "title" when no type was given. */

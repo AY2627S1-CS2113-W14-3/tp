@@ -1,7 +1,9 @@
 package seedu.whatscooking.recipe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,5 +37,16 @@ class RecipeListTest {
         // input:    index 0, on an empty list
         // expected: WhatsCookingException
         assertThrows(WhatsCookingException.class, () -> recipes.get(0));
+    }
+
+    //added by wunicorn21 for addcommand
+
+    @Test
+    public void containsTitle_matchesIgnoringCaseAndSpaces() {
+        RecipeList recipes = new RecipeList();
+        recipes.add(new Recipe("Egg Taco", "snack"));
+        assertTrue(recipes.containsTitle("egg taco"));
+        assertTrue(recipes.containsTitle("  EGG TACO "));
+        assertFalse(recipes.containsTitle("egg"));
     }
 }
