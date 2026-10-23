@@ -189,4 +189,23 @@ public class Ui {
             System.out.println("  " + (i + 1) + ". " + items.get(i));
         }
     }
+
+    /**
+     * Prints the list of ingredients currently available in the home stock.
+     * Displays a friendly message if the stock is empty.
+     *
+     * @param stock the list of ingredients to display
+     */
+    public void showStockList(ArrayList<Ingredient> stock) {
+        showLine();
+        if (stock.isEmpty()) {
+            System.out.println("Your home stock is empty.");
+        } else {
+            System.out.println("Current Home Stock:");
+            for (Ingredient item : stock) {
+                System.out.println("- " + item.getDisplayDescription());
+            }
+        }
+        showLine();
+    }
 }
