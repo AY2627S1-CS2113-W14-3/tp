@@ -1,0 +1,47 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+top to bottom direction
+
+class ModifyCommand {
+  +execute(recipes, ui)
+}
+class RecipeList {
+  +getByName(name): Recipe
+}
+class Ui {
+  +showModifiedRecipe(recipe, previousServingSize)
+}
+class Recipe {
+  -servingSize: int
+  +getServingSize(): int
+  +setServingSize(servingSize)
+  +scaleToServingSize(newServingSize)
+}
+class Ingredient {
+  -unit: String
+  -name: String
+  ~getExactQuantity(): IngredientQuantity
+  ~setQuantity(quantity: IngredientQuantity)
+  +getDisplayDescription(): String
+}
+class IngredientQuantity <<immutable>> {
+  -numerator: BigInteger
+  -denominator: BigInteger
+  ~scale(currentSize, newSize): IngredientQuantity
+  ~doubleValue(): double
+  ~toDisplayString(): String
+}
+
+ModifyCommand ..> RecipeList : find recipe
+ModifyCommand ..> Recipe : resize
+ModifyCommand ..> Ui : report result
+RecipeList --> "0..*" Recipe : recipes
+Recipe --> "0..*" Ingredient : ingredients
+Ingredient --> "1" IngredientQuantity : quantity
+@enduml

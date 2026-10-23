@@ -1,0 +1,71 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant ":WhatsCooking" as App
+participant ":ModifyCommand" as Command
+participant "recipes:RecipeList" as Recipes
+participant "recipe:Recipe" as Recipe
+participant "ingredient:Ingredient" as Ingredient
+participant ":Ui" as UI
+
+App -> Command : execute(recipes, ui)
+activate Command
+note right of Command
+  Validate arguments and parse newSize.
+  This path assumes a valid, different size.
+end note
+Command -> Recipes : getByName(recipeName)
+activate Recipes
+Recipes --> Command : recipe
+deactivate Recipes
+Command -> Recipe : getServingSize()
+activate Recipe
+Recipe --> Command : previousSize
+deactivate Recipe
+Command -> Recipe : scaleToServingSize(newSize)
+activate Recipe
+
+loop for each ingredient: calculate and validate
+  Recipe -> Ingredient : getExactQuantity()
+  activate Ingredient
+  Ingredient --> Recipe : quantity
+  deactivate Ingredient
+  Recipe -> Recipe : calculate, validate and buffer result
+  activate Recipe
+  Recipe --> Recipe
+  deactivate Recipe
+end
+note right of Recipe
+  All results must be positive and finite.
+  A failed check throws before any update.
+end note
+loop for each ingredient: apply validated result
+  Recipe -> Ingredient : setQuantity(scaledQuantities[i])
+  activate Ingredient
+  Ingredient --> Recipe
+  deactivate Ingredient
+end
+note right of Recipe
+  Set servingSize to newSize
+  after updating all quantities.
+end note
+Recipe --> Command
+deactivate Recipe
+Command -> UI : showModifiedRecipe(recipe, previousSize)
+activate UI
+UI --> Command
+deactivate UI
+Command --> App
+deactivate Command
+
+note over Recipe, Ingredient
+  The calculation self-call is pseudocode for
+  quantity.scale(previousSize, newSize), numeric validation
+  and buffering the result. IngredientQuantity calls are omitted.
+end note
+@enduml
