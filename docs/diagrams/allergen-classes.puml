@@ -1,0 +1,41 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+top to bottom direction
+
+class AddCommand {
+  +execute(recipes, ui)
+}
+class RetrieveCommand {
+  +execute(recipes, ui)
+}
+class Ui {
+  +showRecipe(recipe)
+  +showAllergenWarnings(recipe)
+  -getAllergenWarning(recipe)
+}
+class AllergenChecker <<utility>> {
+  {static} +findAllergens(ingredients): Set<Allergen>
+}
+enum Allergen {
+  -displayName: String
+  -keywords: List<String>
+  +getDisplayName(): String
+  ~matches(ingredientName): boolean
+}
+class Ingredient {
+  +getName(): String
+}
+
+AddCommand ..> Ui : display warning after add
+RetrieveCommand ..> Ui : display recipe
+Ui ..> AllergenChecker : derive categories
+AllergenChecker ..> Ingredient : read names
+AllergenChecker ..> Allergen : match keywords
+Ui ..> Allergen : format labels
+@enduml

@@ -6,6 +6,9 @@ ____________________________________________________________
 Egg Taco, snack added!
 ____________________________________________________________
 ____________________________________________________________
+Possible allergens: milk, eggs. Check ingredient labels.
+____________________________________________________________
+____________________________________________________________
 Serving size of Egg Taco has been updated from 1 to 2.
 Updated ingredients:
 1. 2 eggs
@@ -30,6 +33,7 @@ Ingredients:
   3. 200 g cheese
 Steps:
   1. Cook
+Possible allergens: milk, eggs. Check ingredient labels.
 ____________________________________________________________
 ____________________________________________________________
 Serving size of Egg Taco has been updated from 4 to 2.

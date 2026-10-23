@@ -3,8 +3,11 @@ package seedu.whatscooking.ui;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.StringJoiner;
 
 import seedu.whatscooking.WhatsCookingException;
+import seedu.whatscooking.allergen.Allergen;
+import seedu.whatscooking.allergen.AllergenChecker;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
@@ -67,7 +70,7 @@ public class Ui {
 
     /**
      * Prints the full detail of a single recipe: title, type, serving size,
-     * every ingredient, every step, and the note if one is set.
+     * every ingredient, every step, the note if one is set, and any possible allergens.
      *
      * @param recipe the recipe to display
      */
@@ -82,6 +85,10 @@ public class Ui {
         printNumberedList("Steps:", recipe.getSteps());
         if (!recipe.getNote().isEmpty()) {
             System.out.println("Note: " + recipe.getNote());
+        }
+        String allergenWarning = getAllergenWarning(recipe);
+        if (!allergenWarning.isEmpty()) {
+            System.out.println(allergenWarning);
         }
         showLine();
     }
@@ -101,6 +108,34 @@ public class Ui {
         assert index > 0 : "Display numbering is 1-based, so commands must reject indices below 1 before calling";
 
         showRecipe(recipes.get(index - 1));
+    }
+
+    /**
+     * Shows a separate warning after a recipe is added, if its ingredient names match the built-in list.
+     * Prints nothing when no keywords match; absence of a warning does not mean the recipe is allergen-free.
+     *
+     * @param recipe the successfully added recipe
+     */
+    public void showAllergenWarnings(Recipe recipe) {
+        String warning = getAllergenWarning(recipe);
+        if (!warning.isEmpty()) {
+            showLine();
+            System.out.println(warning);
+            showLine();
+        }
+    }
+
+    /** Builds the same warning for both add and retrieve, without storing derived allergen flags. */
+    private String getAllergenWarning(Recipe recipe) {
+        assert recipe != null : "A recipe must be supplied before displaying allergen warnings";
+        StringJoiner names = new StringJoiner(", ");
+        for (Allergen allergen : AllergenChecker.findAllergens(recipe.getIngredients())) {
+            names.add(allergen.getDisplayName());
+        }
+        if (names.length() == 0) {
+            return "";
+        }
+        return "Possible allergens: " + names + ". Check ingredient labels.";
     }
 
     /**

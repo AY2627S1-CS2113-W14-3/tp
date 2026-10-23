@@ -1,0 +1,50 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant ":WhatsCooking" as App
+participant ":RetrieveCommand" as Command
+participant "recipes:RecipeList" as Recipes
+participant ":Ui" as UI
+participant "AllergenChecker" as Checker
+participant "category:Allergen" as Category
+
+App -> Command : execute(recipes, ui)
+activate Command
+Command -> Recipes : getByName(input)
+activate Recipes
+Recipes --> Command : recipe
+deactivate Recipes
+Command -> UI : showRecipe(recipe)
+activate UI
+UI -> UI : print recipe details
+UI -> Checker : findAllergens(recipe.getIngredients())
+activate Checker
+loop for each ingredient and category
+  Checker -> Category : matches(ingredientName)
+  activate Category
+  Category --> Checker : matched
+  deactivate Category
+  opt matched
+    Checker -> Checker : add category to result set
+  end
+end
+Checker --> UI : unmodifiable set of matches
+deactivate Checker
+opt at least one category matched
+  UI -> UI : print possible-allergen warning
+end
+UI --> Command
+deactivate UI
+Command --> App
+deactivate Command
+
+note over UI, Category
+  Private formatting helpers and ingredient getters are omitted.
+  Text-printing and set-insertion messages are pseudocode.
+end note
+@enduml

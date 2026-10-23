@@ -34,6 +34,8 @@ Format: `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP].
 * **Steps (`st/`)**: start each step with its own `st/`. Steps are saved in the order you type them and cannot be empty.
 * **Note (`n/`)**: an optional free-text note. It must come last, only one is allowed, and it cannot be empty.
 * If any part is invalid, the recipe is **not** added, and an error message explains what to fix.
+* After a successful add, matching ingredient names produce a [possible-allergen warning](#built-in-allergen-warnings).
+  The warning does not prevent the recipe from being added.
 
 Examples:
 
@@ -48,6 +50,9 @@ Expected output (for the second example):
 ____________________________________________________________
 egg taco, snack added!
 ____________________________________________________________
+____________________________________________________________
+Possible allergens: eggs. Check ingredient labels.
+____________________________________________________________
 ```
 
 Expected output when the title is already used:
@@ -59,6 +64,66 @@ ____________________________________________________________
 ```
 
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
+
+### Retrieving a recipe: `retrieve`
+
+Displays a recipe's title, type, serving size, ingredients, steps and optional note.
+Matching ingredient names also produce the possible-allergen warning described below.
+
+Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
+
+* `INDEX` is the positive, 1-based number shown by `view`.
+* Alternatively, use the complete recipe name; matching ignores letter case.
+* The same allergen check applies to both forms, including recipes loaded from a previous session.
+
+Examples: `retrieve 1` or `retrieve egg taco`.
+
+### Built-in allergen warnings
+
+After a successful `add`, and when you `retrieve` a recipe, WhatsCooking checks the recorded ingredient
+names against the fixed English keyword list below. No extra command or allergy profile is needed.
+
+For example:
+
+```text
+add Omelette, breakfast s/2 i/2 eggs, 100 g cheese st/Cook
+retrieve Omelette
+```
+
+Both commands include this line in their output:
+
+```text
+Possible allergens: milk, eggs. Check ingredient labels.
+```
+
+The nine categories follow the [USDA's explanation of the major food allergens](https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/food-allergies-big-9).
+The keywords are this application's limited matching rules, not a complete ingredient database.
+
+| Category | Recognised keywords and phrases |
+| --- | --- |
+| milk | milk, butter, cheese, cream, yogurt, yoghurt, whey, casein |
+| eggs | egg, eggs |
+| fish | fish, salmon, tuna, cod, anchovy, anchovies, sardine, sardines |
+| crustacean shellfish | shrimp, shrimps, prawn, prawns, crab, crabs, lobster, lobsters, crayfish, crawfish, crustacean shellfish |
+| tree nuts | almond, almonds, walnut, walnuts, cashew, cashews, pecan, pecans, pistachio, pistachios, hazelnut, hazelnuts, brazil nut, brazil nuts, macadamia, macadamias, tree nut, tree nuts |
+| peanuts | peanut, peanuts, groundnut, groundnuts |
+| wheat | wheat, semolina, couscous, bulgur |
+| soybeans | soy, soya, soybean, soybeans, soy bean, soy beans, tofu, edamame |
+| sesame | sesame, tahini |
+
+Matching ignores case and treats punctuation and whitespace as separators. Thus `EGGS` matches eggs,
+and `brazil-nuts` matches tree nuts, but `eggplant` does not match eggs. Each category appears at most
+once, in the table's order. Only ingredient names are checked: recipe titles, types, steps and notes
+are not scanned. Changing the serving size does not change the detected categories.
+
+If no keyword matches, or a recipe has no ingredients, no warning is printed. **Absence of a warning
+does not mean a recipe is allergen-free.** The checker cannot identify every allergen, hidden ingredients,
+cross-contact or ingredients named in other languages. It also cannot understand substitutions or
+negation: `coconut milk`, `peanut butter` and `egg-free mix` can produce extra warnings because their
+names contain listed keywords. Check the actual ingredient labels and suitability yourself.
+
+This version does not suggest or swap replacement ingredients. Warnings are recalculated from the
+current ingredient names, including after saving and restarting the application.
 
 ### Searching for recipes: `search`
 Searches recipes using one or more filters for the recipe name and/or its ingredients.
@@ -183,4 +248,5 @@ The next time you start the app, your recipes are loaded back from that file aut
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
 * Search recipes `search f/{name/ingredient}/{KEYWORD}`
 * View all recipes `view`
+* Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
