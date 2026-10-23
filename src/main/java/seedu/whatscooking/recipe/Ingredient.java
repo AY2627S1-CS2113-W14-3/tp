@@ -11,6 +11,14 @@ import java.util.regex.Pattern;
  * Quantity can change when a recipe is scaled, while the unit and name stay the same.
  */
 public class Ingredient {
+    // Capture-group numbers follow the quantity, attached unit and name in DESCRIPTION_PATTERN.
+    private static final int QUANTITY_GROUP = 1;
+    private static final int UNIT_GROUP = 2;
+    private static final int NAME_GROUP = 3;
+    private static final int UNIT_AND_NAME_PART_COUNT = 2;
+    private static final int UNIT_PART_INDEX = 0;
+    private static final int NAME_PART_INDEX = 1;
+
     private static final Pattern DESCRIPTION_PATTERN =
             Pattern.compile("([0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)([A-Za-z]*)\\s+(.+)");
 
@@ -42,27 +50,31 @@ public class Ingredient {
             throw new IllegalArgumentException(INVALID_DESCRIPTION);
         }
 
-        double parsedQuantity = Double.parseDouble(matcher.group(1));
+        double parsedQuantity = Double.parseDouble(matcher.group(QUANTITY_GROUP));
         validateQuantity(parsedQuantity);
-        String parsedUnit = matcher.group(2);
-        String parsedName = matcher.group(3).strip();
+        String parsedUnit = matcher.group(UNIT_GROUP);
+        String parsedName = matcher.group(NAME_GROUP).strip();
 
         if (parsedUnit.isEmpty()) {
-            String[] nameParts = parsedName.split("\\s+", 2);
-            if (isUnit(nameParts[0])) {
-                if (nameParts.length < 2) {
+            String[] nameParts = parsedName.split("\\s+", UNIT_AND_NAME_PART_COUNT);
+            if (isUnit(nameParts[UNIT_PART_INDEX])) {
+                if (nameParts.length < UNIT_AND_NAME_PART_COUNT) {
                     throw new IllegalArgumentException(INVALID_DESCRIPTION);
                 }
-                parsedUnit = nameParts[0];
-                parsedName = nameParts[1].strip();
+                parsedUnit = nameParts[UNIT_PART_INDEX];
+                parsedName = nameParts[NAME_PART_INDEX].strip();
             }
         } else if (!isUnit(parsedUnit)) {
             throw new IllegalArgumentException("Unsupported ingredient unit: " + parsedUnit);
         }
 
         validateName(parsedName);
-        this.quantity = new IngredientQuantity(new BigDecimal(matcher.group(1)));
-        this.unit = parsedUnit.isEmpty() ? null : parsedUnit;
+        this.quantity = new IngredientQuantity(new BigDecimal(matcher.group(QUANTITY_GROUP)));
+        if (parsedUnit.isEmpty()) {
+            this.unit = null;
+        } else {
+            this.unit = parsedUnit;
+        }
         this.name = parsedName;
     }
 
@@ -78,7 +90,11 @@ public class Ingredient {
         validateQuantity(quantity);
         validateName(name);
         this.quantity = new IngredientQuantity(BigDecimal.valueOf(quantity));
-        this.unit = unit == null || unit.isBlank() ? null : unit.strip();
+        if (unit == null || unit.isBlank()) {
+            this.unit = null;
+        } else {
+            this.unit = unit.strip();
+        }
         this.name = name.strip();
     }
 

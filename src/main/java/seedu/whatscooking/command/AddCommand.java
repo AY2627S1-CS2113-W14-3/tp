@@ -110,6 +110,7 @@ public class AddCommand extends Command {
 
         logger.log(Level.INFO, "Added recipe \"{0}\"", title);
         ui.showMessage(getRecipeLabel(recipe) + " added!");
+        ui.showAllergenWarnings(recipe);
     }
 
     /**
