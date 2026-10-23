@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import seedu.whatscooking.command.Command;
 import seedu.whatscooking.command.Parser;
 import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockList;
 import seedu.whatscooking.storage.Storage;
 import seedu.whatscooking.ui.Ui;
 
@@ -34,13 +35,14 @@ public class WhatsCooking {
         Ui ui = new Ui();
         Storage storage = new Storage();
         RecipeList recipes = loadRecipes(storage, ui);
+        StockList stockList = new StockList();
         ui.showWelcome();
 
         boolean isExit = false;
         while (!isExit) {
             String fullCommand = ui.readCommand();
             try {
-                Command command = Parser.parse(fullCommand);
+                Command command = Parser.parse(fullCommand, stockList);
                 command.execute(recipes, ui);
                 storage.save(recipes);
                 isExit = command.isExit();

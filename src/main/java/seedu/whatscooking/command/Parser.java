@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import seedu.whatscooking.AppLogger;
 import seedu.whatscooking.WhatsCookingException;
+import seedu.whatscooking.recipe.StockList;
 
 /**
  * Turns one line of raw user input into a {@link Command} object.
@@ -23,7 +24,7 @@ public class Parser {
 
     /**
      * Parses one full line of user input into the {@link Command} it
-     * represents.
+     * represents. Uses a temporary StockList.
      *
      * @param fullCommand the raw line typed by the user
      * @return the command to execute
@@ -31,6 +32,20 @@ public class Parser {
      *     is not recognised
      */
     public static Command parse(String fullCommand) throws WhatsCookingException {
+        return parse(fullCommand, new StockList());
+    }
+
+    /**
+     * Parses one full line of user input into the {@link Command} it
+     * represents, using the provided StockList for stock commands.
+     *
+     * @param fullCommand the raw line typed by the user
+     * @param stockList the stock list to be used by stock commands
+     * @return the command to execute
+     * @throws WhatsCookingException if the line is blank, or the command word
+     *     is not recognised
+     */
+    public static Command parse(String fullCommand, StockList stockList) throws WhatsCookingException {
         assert fullCommand != null : "Ui.readCommand() never returns null, so parse() should never be given one";
 
         String[] parts = fullCommand.trim().split(" ", 2);
@@ -60,6 +75,8 @@ public class Parser {
             return new SearchCommand(arguments);    // Person D
         case "modify":
             return new ModifyCommand(arguments);    // Person E
+        case "stock":
+            return new StockCommand(arguments, stockList);
         default:
             logger.log(Level.WARNING, "Unrecognised command word \"{0}\"", commandWord);
             throw new WhatsCookingException("I don't recognise the command: " + commandWord);
