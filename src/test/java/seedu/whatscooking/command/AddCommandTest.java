@@ -144,6 +144,46 @@ class AddCommandTest {
     }
 
     @Test
+    public void execute_duplicateTitle_throwsAndKeepsOneRecipe() throws WhatsCookingException {
+        RecipeList recipes = runAdd("egg taco");
+        AddCommand command = new AddCommand("  EGG TACO , snack");
+        assertThrows(WhatsCookingException.class, () -> command.execute(recipes, new Ui()));
+        assertEquals(1, recipes.size());
+    }
+
+    @Test
+    public void execute_servingSize_setsServings() throws WhatsCookingException {
+        Recipe recipe = runAdd("egg taco, snack s/4 i/3 eggs st/Scramble egg").get(0);
+        assertEquals(4, recipe.getServingSize());
+        assertEquals("snack", recipe.getType());
+        assertEquals(1, recipe.getIngredients().size());
+    }
+
+    @Test
+    public void execute_noServingSize_defaultsToOne() throws WhatsCookingException {
+        assertEquals(1, runAdd("egg taco i/3 eggs").get(0).getServingSize());
+    }
+
+    @Test
+    public void execute_invalidServingSize_throwsAndAddsNothing() {
+        assertAddRejected("egg taco s/");
+        assertAddRejected("egg taco s/0");
+        assertAddRejected("egg taco s/-2");
+        assertAddRejected("egg taco s/two");
+        assertAddRejected("egg taco s/1.5");
+        assertAddRejected("egg taco s/99999999999");
+        assertAddRejected("egg taco s/2 s/3");
+    }
+
+    @Test
+    public void execute_servingSizeInWrongPlace_throwsAndAddsNothing() {
+        assertAddRejected("egg taco s/2, snack");
+        assertAddRejected("egg taco i/3 eggs s/2");
+        assertAddRejected("egg taco st/Scramble egg s/2");
+        assertAddRejected("egg taco n/Serve hot s/2");
+    }
+
+    @Test
     public void parse_addCommand_addsRecipe() throws WhatsCookingException {
         RecipeList recipes = new RecipeList();
         Parser.parse("add egg taco").execute(recipes, new Ui());

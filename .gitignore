@@ -6,6 +6,7 @@
 # Gradle build files
 /.gradle/
 /build/
+/htmlReport/
 src/main/resources/docs/
 
 # MacOS custom attributes files created by Finder
@@ -18,6 +19,9 @@ _temp/
 
 # Application log files
 *.log
+
+# Saved recipe data
+/data/
 
 # Personal Claude Code memory (not shared with team)
 CLAUDE.local.md

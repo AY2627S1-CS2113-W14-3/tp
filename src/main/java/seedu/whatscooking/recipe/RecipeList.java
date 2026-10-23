@@ -115,6 +115,24 @@ public class RecipeList {
         return recipe;
     }
 
+    /**
+     * Returns whether any recipe already uses the given title, ignoring case
+     * and surrounding spaces.
+     *
+     * @param title the title to look for
+     * @return true if a recipe with that title exists
+     */
+    public boolean containsTitle(String title) {
+        assert title != null : "Title should not be null";
+        String target = title.trim();
+        for (Recipe recipe : recipes) {
+            if (recipe.getTitle().trim().equalsIgnoreCase(target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int size() {
         return recipes.size();
     }
