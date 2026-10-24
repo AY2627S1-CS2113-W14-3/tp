@@ -78,6 +78,60 @@ Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
 
 Examples: `retrieve 1` or `retrieve egg taco`.
 
+### Deleting a recipe: `delete`
+
+Removes a recipe from your recipe list permanently.
+
+Format: `delete INDEX` or `delete RECIPE_NAME`
+
+* `INDEX` is the positive, 1-based number shown by the `view` command.
+* Alternatively, use the complete recipe name. Matching is case-insensitive.
+* You cannot delete a recipe that does not exist.
+
+Examples:
+* `delete 1` deletes the first recipe in the list.
+* `delete egg taco` deletes the recipe named "Egg Taco".
+
+Expected output for `delete egg taco`:
+
+```text
+Deleted: egg taco (snack, serves 1)
+```
+
+### Managing home stock: `stock`
+
+Tracks the ingredients you currently have at home so you know what you can cook. You can add items you bought, remove items you used, and view your current inventory. The stock feature automatically ignores plural forms (e.g., `egg` and `eggs` are treated as the same item).
+
+Format: `stock add INGREDIENT`, `stock remove INGREDIENT`, or `stock list`
+
+* `stock add`: Adds the specified ingredient to your stock. If the ingredient already exists, the quantities are summed.
+* `stock remove`: Subtracts the specified quantity from your stock. If the quantity reaches zero, the item is removed.
+* `stock list`: Displays all ingredients currently in your stock.
+* **Ingredient Format**: Must follow the same format as recipe ingredients: `QUANTITY [UNIT] NAME` (e.g., `3 eggs`, `200g chicken`).
+
+Examples:
+* `stock add 3 eggs` adds 3 eggs to your stock.
+* `stock add 200g chicken` adds 200 grams of chicken.
+* `stock list` shows your current inventory.
+
+Expected output for `stock list`:
+
+```text
+Current Home Stock:
+
+3 eggs
+
+200 g chicken
+```
+
+Expected output for `stock remove 5 eggs` (insufficient quantity):
+
+```text
+Error: Not enough eggs in stock. You only have 3.0
+```
+
+> **Caution:** The stock feature does not do unit conversions. If you add `1 kg chicken` and try to remove `500 g chicken`, the command will fail because the units (`kg` and `g`) do not match.
+
 ### Built-in allergen warnings
 
 After a successful `add`, and when you `retrieve` a recipe, WhatsCooking checks the recorded ingredient
@@ -250,3 +304,5 @@ The next time you start the app, your recipes are loaded back from that file aut
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
+* **Delete a recipe** `delete INDEX` or `delete RECIPE_NAME`
+* **Manage home stock** `stock add INGREDIENT`, `stock remove INGREDIENT`, or `stock list`
