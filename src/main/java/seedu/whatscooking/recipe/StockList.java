@@ -2,6 +2,8 @@ package seedu.whatscooking.recipe;
 
 import java.util.ArrayList;
 import seedu.whatscooking.WhatsCookingException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Holds the ingredients currently available at home.
@@ -24,10 +26,7 @@ public class StockList {
 
         for (Ingredient item : ingredients) {
             // Check if name and unit match
-            boolean sameName = item.getName().equalsIgnoreCase(newItem.getName());
-            boolean sameUnit = (item.getUnit() == null && newItem.getUnit() == null)
-                    || (item.getUnit() != null && item.getUnit().equalsIgnoreCase(newItem.getUnit()));
-            if (sameName && sameUnit) {
+            if (isSameIngredient(item, newItem)) {
                 item.setQuantity(item.getQuantity() + newItem.getQuantity());
                 return;
             }
@@ -47,11 +46,7 @@ public class StockList {
         assert toRemove != null : "Command should validate before removing";
 
         for (Ingredient item : ingredients) {
-            boolean sameName = item.getName().equalsIgnoreCase(toRemove.getName());
-            boolean sameUnit = (item.getUnit() == null && toRemove.getUnit() == null)
-                    || (item.getUnit() != null && item.getUnit().equalsIgnoreCase(toRemove.getUnit()));
-
-            if (sameName && sameUnit) {
+            if (isSameIngredient(item, toRemove)) {
                 if (item.getQuantity() < toRemove.getQuantity()) {
                     throw new WhatsCookingException("Not enough " + item.getName() + " in stock. You only have "
                             + item.getQuantity() + " " + (item.getUnit() == null ? "" : item.getUnit()));
@@ -70,7 +65,36 @@ public class StockList {
         throw new WhatsCookingException("Ingredient not found in stock: " + toRemove.getName());
     }
 
-    public ArrayList<Ingredient> getAll() {
-        return ingredients;
+    /**
+     * Returns all ingredients currently in the stock.
+     * The returned list is unmodifiable to prevent external code from bypassing the add/remove logic.
+     *
+     * @return an unmodifiable list of ingredients.
+     */
+    public List<Ingredient> getAll() {
+        return Collections.unmodifiableList(ingredients);
+    }
+
+    /**
+     * Checks if two ingredients are considered the same based on name (ignoring case and plurals) and unit.
+     */
+    private boolean isSameIngredient(Ingredient item1, Ingredient item2) {
+        boolean sameName = normalizeName(item1.getName()).equals(normalizeName(item2.getName()));
+        boolean sameUnit = (item1.getUnit() == null && item2.getUnit() == null)
+                || (item1.getUnit() != null && item2.getUnit() != null
+                && item1.getUnit().equalsIgnoreCase(item2.getUnit()));
+        return sameName && sameUnit;
+    }
+
+    /**
+     * Normalizes an ingredient name by converting to lowercase and removing trailing 's'.
+     */
+    private String normalizeName(String name) {
+        String lower = name.trim().toLowerCase();
+        if (lower.endsWith("s") && lower.length() > 1) {
+            return lower.substring(0, lower.length() - 1);
+        }
+        return lower;
     }
 }
+

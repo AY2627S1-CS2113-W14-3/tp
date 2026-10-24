@@ -60,6 +60,10 @@ public class StockCommand extends Command {
             break;
 
         case "list":
+            if (!data.isEmpty()) {
+                throw new WhatsCookingException(
+                        "The 'list' action does not take any extra arguments.");
+            }
             ui.showStockList(stockList.getAll());
             break;
 
