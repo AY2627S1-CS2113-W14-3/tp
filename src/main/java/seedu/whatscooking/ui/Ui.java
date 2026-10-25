@@ -196,7 +196,7 @@ public class Ui {
      *
      * @param stock the list of ingredients to display
      */
-    public void showStockList(ArrayList<Ingredient> stock) {
+    public void showStockList(List<Ingredient> stock) {
         showLine();
         if (stock.isEmpty()) {
             System.out.println("Your home stock is empty.");

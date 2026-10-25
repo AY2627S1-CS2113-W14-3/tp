@@ -262,23 +262,83 @@ JUnit suite and Checkstyle. Diagrams are committed as SVG so GitHub and the publ
 them without a PlantUML plugin. After changing a `.puml` source, regenerate its SVG with
 `java -jar /path/to/plantuml.jar -tsvg docs/diagrams/*.puml` and inspect the rendered result.
 
+### Stock management: `stock`
+
+*Section author: Jiang Siyu ([irisiyuj](https://github.com/irisiyuj))*
+
+The `stock` command manages the ingredients the user currently has at home. It allows adding items (`stock add`), removing consumed items (`stock remove`), and viewing the current inventory (`stock list`). Unlike recipes, which store a fixed list of required ingredients, the stock is a mutable collection that grows and shrinks. The feature ignores plural forms to improve usability and ensures items cannot be removed if the user does not have enough. The [User Guide](UserGuide.md#managing-home-stock-stock) describes the command syntax and output.
+
+#### Responsibilities and data model
+
+The feature separates the inventory management from command parsing, allowing the underlying data structure to be tested independently of the console loop.
+
+| Component | Responsibility |
+| --- | --- |
+| `StockList` | Holds an `ArrayList` of `Ingredient` objects. Provides the logic to add, merge, and remove items. It normalizes names to match singular and plural forms. |
+| `StockCommand` | Parses the `action` (add, remove, list) and `data`. It handles command-level validation and passes structured `Ingredient` objects to `StockList`. |
+| `Ingredient` | Reused from the recipe module. It supplies the quantity, unit and name, allowing the stock to perform numeric operations (addition and subtraction). |
+| `Parser` | Recognizes the `stock` keyword and instantiates the `StockCommand` with the shared `StockList`. |
+
+![Object diagram of the stock components](diagrams/stock-object.svg)
+
+*Figure 5. The in-memory state of `StockList` after adding "3 eggs" and "200g chicken". Unrelated members are omitted.*
+
+Unlike `Recipe`, the `StockList` does not maintain serving sizes. It relies on an `ArrayList` to preserve insertion order. The `Ingredient` objects stored in the `StockList` are mutable only in their quantity; their name and unit remain final.
+
+#### Implementation details
+
+![Sequence diagram of a successful stock remove command](diagrams/stock-remove.svg)
+*Figure 6. A valid `stock remove` command that successfully subtracts quantities. Exception paths and the application's subsequent save are omitted.*
+
+1. `StockCommand.execute` splits the arguments into an `action` and the remaining `data`. For `add` and `remove`, it attempts to construct a new `Ingredient` from the `data`.
+2. If the format is invalid (e.g., missing quantity), `IllegalArgumentException` is caught and rethrown as a user-facing `WhatsCookingException`.
+3. The `StockList` iterates through its current items. It checks if the ingredient is the same using two criteria:
+    - The units must match (both null or string-equal).
+    - The names must match after normalization (ignoring case and removing a trailing 's').
+4. For `add`, if a match is found, the quantities are summed. If not, the new `Ingredient` is appended. For `remove`, if the requested quantity exceeds the current quantity, a `WhatsCookingException` is thrown. If it exactly equals, the item is removed from the list; otherwise, it is subtracted.
+5. The command logs the successful operation at `FINE` level and calls `Ui.showStockList` or `Ui.showMessage`.
+
+#### Matching rules and floating-point safety
+
+The `StockList` uses a private `normalizeName` method that converts the name to lowercase and removes a trailing 's'. This allows `stock add 3 eggs` and `stock remove 1 egg` to interact with the same item without requiring complex NLP.
+
+When removing items, the implementation calculates `newQuantity = item.getQuantity() - toRemove.getQuantity()`. Because Java uses floating-point arithmetic for `double`, an exact subtraction like `5.0 - 5.0` might theoretically result in `0.000000001`. To prevent leaving ghost items with near-zero quantities, the code checks `if (newQuantity <= 0.0001)` before calling `ingredients.remove(item)`. Otherwise, it updates the quantity via `setQuantity`.
+
+#### Alternatives and limitations
+
+Storing stock as plain strings (e.g., "3 eggs") was considered but rejected. Numeric operations (adding and subtracting) would require re-parsing every time, which is error-prone. Reusing the `Ingredient` class ensures strict type checking.
+
+A limitation of this implementation is the lack of automatic unit conversion. If the user adds `1 kg chicken` and attempts to remove `500 g chicken`, the command will fail because the units differ. Implementing unit conversion (kg to g, liters to ml) was deemed out of scope for v1.0 to prevent complexity. Additionally, the plural-normalization only strips trailing 's' and does not handle irregular plurals (e.g., "mice" to "mouse").
+
+#### Defensive programming and integration
+
+Assertions guard internal assumptions: `StockList` asserts that the incoming `Ingredient` is not null. User input errors are handled separately via `WhatsCookingException` and displayed by the `Ui`. The `StockList` is instantiated once in `WhatsCooking` and passed via the `Parser` to avoid static state, keeping the class testable.
+
+#### Automated verification
+
+* `StockListTest` covers successful additions, merging identical items, case-insensitivity, plural matching, exact removals, partial removals, and exceptions for insufficient stock.
+* `StockCommandTest` verifies the command parsing, missing arguments, invalid ingredient formats, and correct delegation to `StockList`.
+* Manual testing instructions for the stock feature are included in the section [Instructions for manual testing](#instructions-for-manual-testing).
 
 ## Product scope
 ### Target user profile
 
-Home cooks who prefer a command-line interface for storing, finding and adjusting their recipes.
+Home cooks who prefer a command-line interface for storing, finding and adjusting their recipes, as well as managing the ingredients they currently have at home.
 
 ### Value proposition
 
 Keep recipe details in a local collection, find them quickly, resize quantities for a different
-number of servings, and surface possible allergens named in the recorded ingredients.
+number of servings, and surface possible allergens named in the recorded ingredients, , and keep track of available ingredients to know what can be cooked right now.
 
 ## User Stories
 
 |Version| As a ... | I want to ... | So that I can ...|
-|--------|----------|---------------|------------------|
+|----|---------|---------------|------------------|
 |v1.0|home cook|resize a recipe's ingredient quantities for a new serving size|cook for a different number of people without calculating each amount manually|
+|v1.0|home cook| retrieve a specific recipe by its index or name | view its full details quickly without scrolling through the whole list |
+|v1.0|home cook| delete a recipe by its index or name | remove outdated or disliked recipes to keep my collection clean |
 |v2.0|home cook|see possible allergens when adding or retrieving a recipe|know which recorded ingredients need further checking|
+|v2.0|home cook| add, remove, and list ingredients I currently have at home | keep track of my inventory and know what I can cook right now |
 
 ## Non-Functional Requirements
 
@@ -295,6 +355,7 @@ number of servings, and surface possible allergens named in the recorded ingredi
 * *Possible allergen* - A category whose configured keyword matches an ingredient name; this does not
   establish the actual composition of the ingredient.
 * *Derived result* - A value recalculated from current recipe data instead of stored independently.
+* *Stock* - The collection of ingredients the user currently has at home.
 
 ## Instructions for manual testing
 
@@ -330,3 +391,33 @@ running between the fraction round-trip steps so this checks the in-memory calcu
 | `add Roast i/1 eggplant`, then `retrieve Roast` | No allergen warning; `egg` must not match inside `eggplant`. |
 | `add Empty`, then `retrieve Empty` | Empty ingredient list displays normally with no warning. |
 | `add Drink i/1 cup coconut milk` | Literal keyword matching warns about milk; it cannot interpret substitutes. |
+
+### Retrieve and Delete
+
+Run these actions in order.
+
+| Action | Expected observation |
+| --- | --- |
+| `add Retrieve Test, main i/1 egg st/Cook` | Recipe added. |
+| `retrieve 1` | Displays the full recipe for `Retrieve Test`. |
+| `retrieve retrieve test` | Displays the same recipe (case-insensitive name matching). |
+| `retrieve 99` | Error: Recipe 99 does not exist. |
+| `delete 1` | Successfully deletes the recipe. |
+| `retrieve Retrieve Test` | Error: Recipe not found. |
+| `delete apple` | Error: Recipe not found. |
+
+### Stock management
+
+Run these actions in order, starting with an empty stock. Keep the application running between steps to verify in-memory updates.
+
+| Action | Expected observation |
+| --- | --- |
+| `stock add 3 eggs` | Stock updated; message says "Added to stock: 3 eggs". |
+| `stock add 200g chicken` | Stock now has two different items. |
+| `stock list` | Lists "3 eggs" and "200g chicken". |
+| `stock remove 1 egg` | Case and plural matching work; message says "Removed from stock: 1 egg". |
+| `stock list` | Lists "2.0 eggs" (or similar) and "200g chicken". |
+| `stock remove 5 eggs` | Error: Not enough eggs in stock. You only have 2.0. |
+| `stock remove 2 eggs` | Message says removed; `stock list` no longer shows eggs. |
+| `stock add abc` | Error: Invalid ingredient format. |
+| `stock unknown` | Error: Unknown stock action. |
