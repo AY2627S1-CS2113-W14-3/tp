@@ -40,15 +40,15 @@ public class FilterTest {
         recipe.addIngredient(new Ingredient("2 eggs"));
         recipe.setServingSize(2);
 
-        assertTrue(new StockFilter("4", stock).matches(recipe));
-        assertFalse(new StockFilter("5", stock).matches(recipe));
+        assertTrue(new StockFilter(4, stock).matches(recipe));
+        assertFalse(new StockFilter(5, stock).matches(recipe));
     }
 
     @Test
     public void stockFilter_rejectsInvalidServingSize() {
-        StockFilter filter = new StockFilter("zero", new StockList());
+        StockFilter filter = new StockFilter(0, new StockList());
         Recipe recipe = new Recipe("Omelette", "main");
 
-        assertThrows(WhatsCookingException.class, () -> filter.matches(recipe));
+        assertThrows(IllegalArgumentException.class, () -> filter.matches(recipe));
     }
 }

@@ -101,7 +101,8 @@ public class SearchCommand extends Command {
             } else if (parts[1].equals("ingredient")) {
                 filter = new IngredientFilter(parts[2]);
             } else if (parts[1].equals("stock")) {
-                filter = new StockFilter(parts[2], stockList);
+                int servingSize = parseServingSize(parts[2]);
+                filter = new StockFilter(servingSize, stockList);
             } else {
                 logger.log(Level.FINE, "Rejected search filter: unsupported filter type \"{0}\"", parts[1]);
                 throw new WhatsCookingException("Search filter must be name, ingredient, or stock.");
@@ -109,6 +110,21 @@ public class SearchCommand extends Command {
             filters.add(filter);
         }
         return filters;
+    }
+
+    private int parseServingSize(String text) throws WhatsCookingException {
+        if (!text.matches("[0-9]+")) {
+            throw new WhatsCookingException("Stock must be a positive integer.");
+        }
+        try {
+            int servingSize = Integer.parseInt(text);
+            if (servingSize <= 0) {
+                throw new WhatsCookingException("Stock must be a positive integer.");
+            }
+            return servingSize;
+        } catch (NumberFormatException e) {
+            throw new WhatsCookingException("Stock must be a positive integer.");
+        }
     }
 
     @Override

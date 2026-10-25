@@ -8,23 +8,22 @@ import seedu.whatscooking.recipe.StockList;
 /** Matches recipes that can be prepared from stock for a requested serving size. */
 public class StockFilter extends Filter {
     private final StockList stockList;
-    private final String keyword;
+    private final int targetServingSize;
 
-    public StockFilter(String keyword, StockList stockList) {
-        this.keyword = keyword;
+    public StockFilter(int targetServingSize, StockList stockList) {
+        this.targetServingSize = targetServingSize;
         this.stockList = stockList;
     }
 
     @Override
     public boolean matches(Recipe recipe) throws WhatsCookingException {
-        int servingSize = parseServingSize(keyword);
         Recipe scaledRecipe = new Recipe(recipe.getTitle(), recipe.getType());
         scaledRecipe.setServingSize(recipe.getServingSize());
         for (Ingredient ingredient : recipe.getIngredients()) {
             scaledRecipe.addIngredient(new Ingredient(ingredient.getQuantity(),
                     ingredient.getUnit(), ingredient.getName()));
         }
-        scaledRecipe.scaleToServingSize(servingSize);
+        scaledRecipe.scaleToServingSize(targetServingSize);
 
         for (Ingredient required : scaledRecipe.getIngredients()) {
             double available = 0;
@@ -44,18 +43,5 @@ public class StockFilter extends Filter {
         return true;
     }
 
-    private int parseServingSize(String text) throws WhatsCookingException {
-        if (!text.matches("[0-9]+")) {
-            throw new WhatsCookingException("Stock must be a positive integer.");
-        }
-        try {
-            int servingSize = Integer.parseInt(text);
-            if (servingSize <= 0) {
-                throw new WhatsCookingException("Stock must be a positive integer.");
-            }
-            return servingSize;
-        } catch (NumberFormatException e) {
-            throw new WhatsCookingException("Stock must be a positive integer.");
-        }
-    }
+
 }
