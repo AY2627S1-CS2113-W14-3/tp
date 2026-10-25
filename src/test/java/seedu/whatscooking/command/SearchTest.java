@@ -12,6 +12,7 @@ import seedu.whatscooking.WhatsCookingException;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockList;
 import seedu.whatscooking.ui.Ui;
 
 public class SearchTest {
@@ -152,6 +153,55 @@ public class SearchTest {
                 () -> new SearchCommand("f/category/Chicken").internalExecute(recipes));
         assertThrows(WhatsCookingException.class,
                 () -> new SearchCommand("f/name").internalExecute(recipes));
+    }
+
+    @Test
+    public void internalExecute_stockFilter_matchesRecipeWithAllRequiredStock()
+            throws WhatsCookingException {
+        StockList stock = new StockList();
+        stock.add(new Ingredient("2 eggs"));
+        stock.add(new Ingredient("200 g flour"));
+
+        Recipe recipe = new Recipe("Pancakes", "breakfast");
+        recipe.addIngredient(new Ingredient("2 eggs"));
+        recipe.addIngredient(new Ingredient("200 g flour"));
+        RecipeList recipes = new RecipeList();
+        recipes.add(recipe);
+
+        assertEquals(java.util.List.of(0),
+                new SearchCommand("f/stock", stock).internalExecute(recipes));
+    }
+
+    @Test
+    public void internalExecute_stockFilter_rejectsInsufficientQuantityOrWrongUnit()
+            throws WhatsCookingException {
+        StockList stock = new StockList();
+        stock.add(new Ingredient("1 egg"));
+        stock.add(new Ingredient("200 g flour"));
+
+        Recipe recipe = new Recipe("Pancakes", "breakfast");
+        recipe.addIngredient(new Ingredient("2 eggs"));
+        recipe.addIngredient(new Ingredient("200 ml flour"));
+        RecipeList recipes = new RecipeList();
+        recipes.add(recipe);
+
+        assertTrue(new SearchCommand("f/stock", stock).internalExecute(recipes).isEmpty());
+    }
+
+    @Test
+    public void internalExecute_stockFilter_totalsDuplicateRecipeIngredients()
+            throws WhatsCookingException {
+        StockList stock = new StockList();
+        stock.add(new Ingredient("3 eggs"));
+
+        Recipe recipe = new Recipe("Eggs", "main");
+        recipe.addIngredient(new Ingredient("1 egg"));
+        recipe.addIngredient(new Ingredient("2 eggs"));
+        RecipeList recipes = new RecipeList();
+        recipes.add(recipe);
+
+        assertEquals(java.util.List.of(0),
+                new SearchCommand("f/stock/available", stock).internalExecute(recipes));
     }
 
     private static class RecordingUi extends Ui {

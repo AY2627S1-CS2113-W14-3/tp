@@ -72,7 +72,7 @@ public class Parser {
         case "delete":
             return new DeleteCommand(arguments);   // Person C
         case "search":
-            return new SearchCommand(arguments);    // Person D
+            return new SearchCommand(arguments, stockList);    // Person D
         case "modify":
             return new ModifyCommand(arguments);    // Person E
         case "stock":

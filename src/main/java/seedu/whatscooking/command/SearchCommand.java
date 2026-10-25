@@ -9,19 +9,33 @@ import seedu.whatscooking.WhatsCookingException;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockList;
 import seedu.whatscooking.ui.Ui;
 
 /**
  * Searches recipes using a filter in the form {@code f/{field}/{keyword}}.
- * The supported fields are {@code name} and {@code ingredient}.
+ * The supported fields are {@code name}, {@code ingredient}, and {@code stock}.
+ * The stock filter is written as {@code f/stock} (or {@code f/stock/available}).
  */
 public class SearchCommand extends Command {
+    private final StockList stockList;
     private static final String FILTER_PREFIX = "f/";
     private static final Logger logger = AppLogger.getLogger(SearchCommand.class);
     private final String arguments;
 
-    public SearchCommand(String arguments) {
+    public SearchCommand(String arguments, StockList stockList) {
         this.arguments = arguments;
+        this.stockList = stockList;
+    }
+
+    /**
+     * Constructs a search without stock filtering. This overload keeps searches
+     * independent from stock when no StockList is supplied.
+     *
+     * @param arguments the raw search filters
+     */
+    public SearchCommand(String arguments) {
+        this(arguments, new StockList());
     }
 
     /**
@@ -69,12 +83,14 @@ public class SearchCommand extends Command {
         for (String filterString : filterStrings) {
             if (!filterString.startsWith(FILTER_PREFIX)) {
                 logger.log(Level.FINE, "Rejected search filter: invalid prefix in \"{0}\"", filterString);
-                throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
+                throw new WhatsCookingException("Search filters must use f/{name/ingredient/stock}/{keyword}.");
             }
             String[] parts = filterString.split("/", 3);
-            if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()) {
+            if (parts.length < 2 || parts.length > 3 || parts[1].isBlank()
+                    || (parts.length == 3 && parts[2].isBlank() && !parts[1].equals("stock"))
+                    || (parts.length == 2 && !parts[1].equals("stock"))) {
                 logger.log(Level.FINE, "Rejected search filter: invalid format \"{0}\"", filterString);
-                throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
+                throw new WhatsCookingException("Search filters must use f/{name/ingredient/stock}/{keyword}.");
             }
 
             FilterType type;
@@ -82,22 +98,25 @@ public class SearchCommand extends Command {
                 type = FilterType.NAME;
             } else if (parts[1].equals("ingredient")) {
                 type = FilterType.INGREDIENT;
+            } else if (parts[1].equals("stock")) {
+                type = FilterType.STOCK;
             } else {
                 logger.log(Level.FINE, "Rejected search filter: unsupported filter type \"{0}\"", parts[1]);
-                throw new WhatsCookingException("Search filter must be either name or ingredient.");
+                throw new WhatsCookingException("Search filter must be name, ingredient, or stock.");
             }
-            filters.add(new Filter(type, parts[2]));
+            filters.add(new Filter(type, parts.length == 2 ? "" : parts[2]));
         }
         return filters;
     }
 
     private enum FilterType {
         NAME,
-        INGREDIENT
+        INGREDIENT,
+        STOCK
     }
 
     /** Holds a validated filter and applies it to recipes. */
-    private static class Filter {
+    private class Filter {
         private final FilterType type;
         private final String keyword;
 
@@ -120,10 +139,32 @@ public class SearchCommand extends Command {
                     }
                 }
                 return false;
+            case STOCK:
+                return canBeMadeWithStock(recipe);
             default:
                 logger.log(Level.FINE, "Rejected search filter: unexpected type {0}", type);
                 throw new IllegalStateException("Unexpected filter type: " + type);
             }
+        }
+
+        /** Returns whether the stock contains enough of every recipe ingredient. */
+        private boolean canBeMadeWithStock(Recipe recipe) {
+            for (Ingredient required : recipe.getIngredients()) {
+                double available = 0;
+                for (Ingredient stocked : stockList.getAll()) {
+                    boolean sameName = stocked.getName().equalsIgnoreCase(required.getName());
+                    boolean sameUnit = (stocked.getUnit() == null && required.getUnit() == null)
+                            || (stocked.getUnit() != null && required.getUnit() != null
+                            && stocked.getUnit().equalsIgnoreCase(required.getUnit()));
+                    if (sameName && sameUnit) {
+                        available += stocked.getQuantity();
+                    }
+                }
+                if (available + 0.0001 < required.getQuantity()) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

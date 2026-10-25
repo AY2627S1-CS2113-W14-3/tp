@@ -1,6 +1,7 @@
 package seedu.whatscooking.command;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,6 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import seedu.whatscooking.WhatsCookingException;
+import seedu.whatscooking.recipe.Ingredient;
+import seedu.whatscooking.recipe.Recipe;
+import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockList;
 
 /**
  * Tests for {@link Parser}: every supported command word maps to the right
@@ -67,5 +72,19 @@ class ParserTest {
         // expected: WhatsCookingException for both
         assertThrows(WhatsCookingException.class, () -> Parser.parse(""));
         assertThrows(WhatsCookingException.class, () -> Parser.parse("   "));
+    }
+
+    @Test
+    public void parse_searchUsesProvidedStockList() throws WhatsCookingException {
+        StockList stock = new StockList();
+        stock.add(new Ingredient("2 eggs"));
+        Recipe recipe = new Recipe("Omelette", "main");
+        recipe.addIngredient(new Ingredient("2 eggs"));
+        RecipeList recipes = new RecipeList();
+        recipes.add(recipe);
+
+        SearchCommand command = (SearchCommand) Parser.parse("search f/stock", stock);
+
+        assertEquals(java.util.List.of(0), command.internalExecute(recipes));
     }
 }
