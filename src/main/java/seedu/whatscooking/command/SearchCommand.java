@@ -6,22 +6,36 @@ import java.util.logging.Logger;
 
 import seedu.whatscooking.AppLogger;
 import seedu.whatscooking.WhatsCookingException;
-import seedu.whatscooking.recipe.Ingredient;
-import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockList;
 import seedu.whatscooking.ui.Ui;
+import seedu.whatscooking.command.filter.Filter;
+import seedu.whatscooking.command.filter.FilterFactory;
 
 /**
  * Searches recipes using a filter in the form {@code f/{field}/{keyword}}.
- * The supported fields are {@code name} and {@code ingredient}.
+ * The supported fields are {@code name}, {@code ingredient}, and {@code stock}.
+ * The stock filter is written as {@code f/stock/{number}}, where the number is
+ * the desired serving size.
  */
 public class SearchCommand extends Command {
-    private static final String FILTER_PREFIX = "f/";
     private static final Logger logger = AppLogger.getLogger(SearchCommand.class);
+    private final StockList stockList;
     private final String arguments;
 
-    public SearchCommand(String arguments) {
+    public SearchCommand(String arguments, StockList stockList) {
         this.arguments = arguments;
+        this.stockList = stockList;
+    }
+
+    /**
+     * Constructs a search with an empty stock list. This overload keeps searches
+     * independent from the application's stock when no StockList is supplied.
+     *
+     * @param arguments the raw search filters
+     */
+    public SearchCommand(String arguments) {
+        this(arguments, new StockList());
     }
 
     /**
@@ -32,7 +46,7 @@ public class SearchCommand extends Command {
      * @throws WhatsCookingException if a filter is malformed
      */
     public ArrayList<Integer> internalExecute(RecipeList recipes) throws WhatsCookingException {
-        ArrayList<Filter> filters = parseFilters();
+        ArrayList<Filter> filters = FilterFactory.createFilters(arguments, stockList);
         ArrayList<Integer> matches = new ArrayList<>();
 
         logger.log(Level.FINE, "Running SearchCommand with {0} filters on {1} recipes",
@@ -52,79 +66,6 @@ public class SearchCommand extends Command {
             }
         }
         return matches;
-    }
-
-    /** Parses and validates the user-provided filter. */
-    private ArrayList<Filter> parseFilters() throws WhatsCookingException {
-        String trimmedArguments = arguments.trim();
-        if (trimmedArguments.isEmpty()) {
-            logger.log(Level.FINE, "Rejected search: no filter found");
-            throw new WhatsCookingException(
-                "Please provide at least one search filter in the form f/{field}/{keyword}.");
-        }
-
-        // A filter does not contain spaces, so whitespace is a separator between filters.
-        String[] filterStrings = trimmedArguments.split("\\s+");
-        ArrayList<Filter> filters = new ArrayList<>();
-        for (String filterString : filterStrings) {
-            if (!filterString.startsWith(FILTER_PREFIX)) {
-                logger.log(Level.FINE, "Rejected search filter: invalid prefix in \"{0}\"", filterString);
-                throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
-            }
-            String[] parts = filterString.split("/", 3);
-            if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()) {
-                logger.log(Level.FINE, "Rejected search filter: invalid format \"{0}\"", filterString);
-                throw new WhatsCookingException("Search filters must use f/{name/ingredient}/{keyword}.");
-            }
-
-            FilterType type;
-            if (parts[1].equals("name")) {
-                type = FilterType.NAME;
-            } else if (parts[1].equals("ingredient")) {
-                type = FilterType.INGREDIENT;
-            } else {
-                logger.log(Level.FINE, "Rejected search filter: unsupported filter type \"{0}\"", parts[1]);
-                throw new WhatsCookingException("Search filter must be either name or ingredient.");
-            }
-            filters.add(new Filter(type, parts[2]));
-        }
-        return filters;
-    }
-
-    private enum FilterType {
-        NAME,
-        INGREDIENT
-    }
-
-    /** Holds a validated filter and applies it to recipes. */
-    private static class Filter {
-        private final FilterType type;
-        private final String keyword;
-
-        Filter(FilterType type, String keyword) {
-            this.type = type;
-            this.keyword = keyword;
-        }
-
-        boolean matches(Recipe recipe) {
-            logger.log(Level.FINE, "Using filter: type={0}, keyword={1} on recipe {2}",
-                    new Object[]{type, keyword, recipe.getTitle()});
-
-            switch (type) {
-            case NAME:
-                return recipe.getTitle().toLowerCase().contains(keyword.toLowerCase());
-            case INGREDIENT:
-                for (Ingredient ingredient : recipe.getIngredients()) {
-                    if (ingredient.getName().toLowerCase().contains(keyword.toLowerCase())) {
-                        return true;
-                    }
-                }
-                return false;
-            default:
-                logger.log(Level.FINE, "Rejected search filter: unexpected type {0}", type);
-                throw new IllegalStateException("Unexpected filter type: " + type);
-            }
-        }
     }
 
     @Override
