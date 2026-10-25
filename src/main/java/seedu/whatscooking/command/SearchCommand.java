@@ -6,14 +6,11 @@ import java.util.logging.Logger;
 
 import seedu.whatscooking.AppLogger;
 import seedu.whatscooking.WhatsCookingException;
-import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.recipe.StockList;
 import seedu.whatscooking.ui.Ui;
 import seedu.whatscooking.command.filter.Filter;
-import seedu.whatscooking.command.filter.IngredientFilter;
-import seedu.whatscooking.command.filter.NameFilter;
-import seedu.whatscooking.command.filter.StockFilter;
+import seedu.whatscooking.command.filter.FilterFactory;
 
 /**
  * Searches recipes using a filter in the form {@code f/{field}/{keyword}}.
@@ -22,9 +19,8 @@ import seedu.whatscooking.command.filter.StockFilter;
  * the desired serving size.
  */
 public class SearchCommand extends Command {
-    private final StockList stockList;
-    private static final String FILTER_PREFIX = "f/";
     private static final Logger logger = AppLogger.getLogger(SearchCommand.class);
+    private final StockList stockList;
     private final String arguments;
 
     public SearchCommand(String arguments, StockList stockList) {
@@ -50,7 +46,7 @@ public class SearchCommand extends Command {
      * @throws WhatsCookingException if a filter is malformed
      */
     public ArrayList<Integer> internalExecute(RecipeList recipes) throws WhatsCookingException {
-        ArrayList<Filter> filters = parseFilters();
+        ArrayList<Filter> filters = FilterFactory.createFilters(arguments, stockList);
         ArrayList<Integer> matches = new ArrayList<>();
 
         logger.log(Level.FINE, "Running SearchCommand with {0} filters on {1} recipes",
@@ -70,61 +66,6 @@ public class SearchCommand extends Command {
             }
         }
         return matches;
-    }
-
-    /** Parses and validates the user-provided filter. */
-    private ArrayList<Filter> parseFilters() throws WhatsCookingException {
-        String trimmedArguments = arguments.trim();
-        if (trimmedArguments.isEmpty()) {
-            logger.log(Level.FINE, "Rejected search: no filter found");
-            throw new WhatsCookingException(
-                "Please provide at least one search filter in the form f/{field}/{keyword}.");
-        }
-
-        // A filter does not contain spaces, so whitespace is a separator between filters.
-        String[] filterStrings = trimmedArguments.split("\\s+");
-        ArrayList<Filter> filters = new ArrayList<>();
-        for (String filterString : filterStrings) {
-            if (!filterString.startsWith(FILTER_PREFIX)) {
-                logger.log(Level.FINE, "Rejected search filter: invalid prefix in \"{0}\"", filterString);
-                throw new WhatsCookingException("Search filters must use f/{name/ingredient/stock}/{keyword}.");
-            }
-            String[] parts = filterString.split("/", 3);
-            if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()) {
-                logger.log(Level.FINE, "Rejected search filter: invalid format \"{0}\"", filterString);
-                throw new WhatsCookingException("Search filters must use f/{name/ingredient/stock}/{keyword}.");
-            }
-
-            Filter filter;
-            if (parts[1].equals("name")) {
-                filter = new NameFilter(parts[2]);
-            } else if (parts[1].equals("ingredient")) {
-                filter = new IngredientFilter(parts[2]);
-            } else if (parts[1].equals("stock")) {
-                int servingSize = parseServingSize(parts[2]);
-                filter = new StockFilter(servingSize, stockList);
-            } else {
-                logger.log(Level.FINE, "Rejected search filter: unsupported filter type \"{0}\"", parts[1]);
-                throw new WhatsCookingException("Search filter must be name, ingredient, or stock.");
-            }
-            filters.add(filter);
-        }
-        return filters;
-    }
-
-    private int parseServingSize(String text) throws WhatsCookingException {
-        if (!text.matches("[0-9]+")) {
-            throw new WhatsCookingException("Stock must be a positive integer.");
-        }
-        try {
-            int servingSize = Integer.parseInt(text);
-            if (servingSize <= 0) {
-                throw new WhatsCookingException("Stock must be a positive integer.");
-            }
-            return servingSize;
-        } catch (NumberFormatException e) {
-            throw new WhatsCookingException("Stock must be a positive integer.");
-        }
     }
 
     @Override
