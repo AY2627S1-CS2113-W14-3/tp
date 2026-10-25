@@ -15,7 +15,8 @@ import seedu.whatscooking.ui.Ui;
 /**
  * Searches recipes using a filter in the form {@code f/{field}/{keyword}}.
  * The supported fields are {@code name}, {@code ingredient}, and {@code stock}.
- * The stock filter is written as {@code f/stock} (or {@code f/stock/available}).
+ * The stock filter is written as {@code f/stock/{number}}, where the number is
+ * the desired serving size.
  */
 public class SearchCommand extends Command {
     private final StockList stockList;
@@ -29,8 +30,8 @@ public class SearchCommand extends Command {
     }
 
     /**
-     * Constructs a search without stock filtering. This overload keeps searches
-     * independent from stock when no StockList is supplied.
+     * Constructs a search with an empty stock list. This overload keeps searches
+     * independent from the application's stock when no StockList is supplied.
      *
      * @param arguments the raw search filters
      */
@@ -86,9 +87,7 @@ public class SearchCommand extends Command {
                 throw new WhatsCookingException("Search filters must use f/{name/ingredient/stock}/{keyword}.");
             }
             String[] parts = filterString.split("/", 3);
-            if (parts.length < 2 || parts.length > 3 || parts[1].isBlank()
-                    || (parts.length == 3 && parts[2].isBlank() && !parts[1].equals("stock"))
-                    || (parts.length == 2 && !parts[1].equals("stock"))) {
+            if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()) {
                 logger.log(Level.FINE, "Rejected search filter: invalid format \"{0}\"", filterString);
                 throw new WhatsCookingException("Search filters must use f/{name/ingredient/stock}/{keyword}.");
             }
@@ -125,7 +124,7 @@ public class SearchCommand extends Command {
             this.keyword = keyword;
         }
 
-        boolean matches(Recipe recipe) {
+        boolean matches(Recipe recipe) throws WhatsCookingException {
             logger.log(Level.FINE, "Using filter: type={0}, keyword={1} on recipe {2}",
                     new Object[]{type, keyword, recipe.getTitle()});
 
@@ -140,16 +139,24 @@ public class SearchCommand extends Command {
                 }
                 return false;
             case STOCK:
-                return canBeMadeWithStock(recipe);
+                return canBeMadeWithStock(recipe, parseStockSize(keyword));
             default:
                 logger.log(Level.FINE, "Rejected search filter: unexpected type {0}", type);
                 throw new IllegalStateException("Unexpected filter type: " + type);
             }
         }
 
-        /** Returns whether the stock contains enough of every recipe ingredient. */
-        private boolean canBeMadeWithStock(Recipe recipe) {
-            for (Ingredient required : recipe.getIngredients()) {
+        /** Returns whether the stock contains enough for every ingredient at the desired serving size. */
+        private boolean canBeMadeWithStock(Recipe recipe, int stockSize) {
+            Recipe scaledRecipe = new Recipe(recipe.getTitle(), recipe.getType());
+            scaledRecipe.setServingSize(recipe.getServingSize());
+            for (Ingredient ingredient : recipe.getIngredients()) {
+                scaledRecipe.addIngredient(new Ingredient(ingredient.getQuantity(),
+                        ingredient.getUnit(), ingredient.getName()));
+            }
+            scaledRecipe.scaleToServingSize(stockSize);
+
+            for (Ingredient required : scaledRecipe.getIngredients()) {
                 double available = 0;
                 for (Ingredient stocked : stockList.getAll()) {
                     boolean sameName = stocked.getName().equalsIgnoreCase(required.getName());
@@ -165,6 +172,22 @@ public class SearchCommand extends Command {
                 }
             }
             return true;
+        }
+
+        /** Parses the stock keyword as a positive integer. */
+        private int parseStockSize(String text) throws WhatsCookingException {
+            if (!text.matches("[0-9]+")) {
+                throw new WhatsCookingException("Stock must be a positive integer.");
+            }
+            try {
+                int stockSize = Integer.parseInt(text);
+                if (stockSize <= 0) {
+                    throw new WhatsCookingException("Stock must be a positive integer.");
+                }
+                return stockSize;
+            } catch (NumberFormatException e) {
+                throw new WhatsCookingException("Stock must be a positive integer.");
+            }
         }
     }
 

@@ -83,7 +83,7 @@ class ParserTest {
         RecipeList recipes = new RecipeList();
         recipes.add(recipe);
 
-        SearchCommand command = (SearchCommand) Parser.parse("search f/stock", stock);
+        SearchCommand command = (SearchCommand) Parser.parse("search f/stock/1", stock);
 
         assertEquals(java.util.List.of(0), command.internalExecute(recipes));
     }

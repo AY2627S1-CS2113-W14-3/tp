@@ -169,7 +169,7 @@ public class SearchTest {
         recipes.add(recipe);
 
         assertEquals(java.util.List.of(0),
-                new SearchCommand("f/stock", stock).internalExecute(recipes));
+                new SearchCommand("f/stock/1", stock).internalExecute(recipes));
     }
 
     @Test
@@ -185,7 +185,7 @@ public class SearchTest {
         RecipeList recipes = new RecipeList();
         recipes.add(recipe);
 
-        assertTrue(new SearchCommand("f/stock", stock).internalExecute(recipes).isEmpty());
+        assertTrue(new SearchCommand("f/stock/1", stock).internalExecute(recipes).isEmpty());
     }
 
     @Test
@@ -195,13 +195,13 @@ public class SearchTest {
         stock.add(new Ingredient("3 eggs"));
 
         Recipe recipe = new Recipe("Eggs", "main");
-        recipe.addIngredient(new Ingredient("1 egg"));
+        recipe.addIngredient(new Ingredient("1 eggs"));
         recipe.addIngredient(new Ingredient("2 eggs"));
         RecipeList recipes = new RecipeList();
         recipes.add(recipe);
 
         assertEquals(java.util.List.of(0),
-                new SearchCommand("f/stock/available", stock).internalExecute(recipes));
+                new SearchCommand("f/stock/1", stock).internalExecute(recipes));
     }
 
     private static class RecordingUi extends Ui {
