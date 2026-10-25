@@ -1,0 +1,23 @@
+@startuml
+
+skinparam objectBackgroundColor White
+
+object "s : StockList" as stock {
+  ingredients = [item1, item2]
+}
+
+object "item1 : Ingredient" as item1 {
+  name = "egg"
+  unit = null
+  quantity = 3.0
+}
+
+object "item2 : Ingredient" as item2 {
+  name = "chicken"
+  unit = "g"
+  quantity = 200.0
+}
+
+stock --> item1 : contains
+stock --> item2 : contains
+@enduml
