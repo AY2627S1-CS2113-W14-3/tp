@@ -336,6 +336,7 @@ The next time you start the app, your recipes are loaded back from that file aut
 {Give a 'cheat sheet' of commands here}
 
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
+* Edit a recipe's title, type or note `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`
 * Search recipes `search f/{name/ingredient}/{KEYWORD}`
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
