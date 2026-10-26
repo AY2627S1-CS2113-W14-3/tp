@@ -1,0 +1,52 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+top to bottom direction
+
+abstract class Command {
+  +{abstract} execute(recipes, ui)
+}
+class AddCommand {
+  +execute(recipes, ui)
+}
+class EditCommand {
+  +execute(recipes, ui)
+}
+class RecipeInputParser <<utility>> {
+  ~{static} parseTitle(text): String
+  ~{static} parseType(text): String
+  ~{static} parseServingSize(text): int
+  ~{static} addIngredients(recipe, text)
+  ~{static} addSteps(recipe, text)
+  ~{static} parseNote(text): String
+}
+class RecipeList {
+  +containsTitle(title): boolean
+  +add(recipe)
+  +get(index): Recipe
+}
+class Recipe {
+  -title: String
+  -type: String
+  -servingSize: int
+  -note: String
+  +setTitle(title)
+  +setType(type)
+  +setServingSize(servingSize)
+  +setNote(note)
+}
+
+AddCommand -up-|> Command
+EditCommand -up-|> Command
+AddCommand ..> RecipeInputParser : check values
+EditCommand ..> RecipeInputParser : check values
+AddCommand ..> RecipeList : check title, add
+EditCommand ..> RecipeList : find recipe, check title
+RecipeInputParser ..> Recipe : add ingredients, steps
+RecipeList --> "0..*" Recipe : recipes
+@enduml
