@@ -65,6 +65,42 @@ ____________________________________________________________
 
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
 
+### Editing a recipe: `edit`
+
+Changes the title, type and/or note of an existing recipe. Ingredients, steps and serving size stay the same.
+
+Format: `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`
+
+* `INDEX` is the positive, 1-based number shown by `view`.
+* Give at least one of `title/`, `type/` and `n/`. They can be in any order, but each only once.
+* The new values replace the old ones and cannot be empty.
+* The new title cannot be one that another recipe already uses (ignoring letter case).
+  Changing only the letter case of a recipe's own title, e.g. `egg taco` to `Egg Taco`, is allowed.
+* If any part is invalid, the recipe is **not** changed.
+* To change the serving size, use [`modify`](#modifying-a-recipe-modify) instead.
+
+Examples:
+
+* `edit 1 title/egg wrap` renames recipe 1 to `egg wrap`.
+* `edit 3 type/side n/Add cheese before toasting` changes recipe 3's type and note.
+
+Expected output (for `edit 3 title/Cheesy garlic bread n/Add cheese before toasting`):
+
+```
+____________________________________________________________
+Updated recipe 3:
+Cheesy garlic bread (side, serves 4)
+Note: Add cheese before toasting
+____________________________________________________________
+```
+
+Possible errors:
+
+* `edit 9 type/main` when there are only 3 recipes: `Error: Recipe 9 does not exist; you have 3 recipe(s).`
+* `edit 1 title/pancakes` when another recipe is called `pancakes`:
+  `Error: A recipe called "pancakes" already exists. Choose a different title.`
+* `edit 1` or `edit 1 egg wrap`: an error showing the correct format.
+
 ### Retrieving a recipe: `retrieve`
 
 Displays a recipe's title, type, serving size, ingredients, steps and optional note.
