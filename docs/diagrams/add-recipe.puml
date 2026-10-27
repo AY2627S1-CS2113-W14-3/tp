@@ -1,0 +1,80 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant ":WhatsCooking" as App
+participant ":AddCommand" as Command
+participant "<<class>>\nRecipeInputParser" as Input
+participant "recipes:RecipeList" as Recipes
+participant "recipe:Recipe" as Recipe
+participant ":Ui" as UI
+
+App -> Command : execute(recipes, ui)
+activate Command
+Command -> Command : split input at n/, st/, i/, s/
+activate Command
+Command --> Command
+deactivate Command
+
+Command -> Input : parseTitle(titleText)
+activate Input
+Input --> Command : title
+deactivate Input
+
+Command -> Recipes : containsTitle(title)
+activate Recipes
+Recipes --> Command : isTaken
+deactivate Recipes
+note right of Command
+  If isTaken is true, a WhatsCookingException
+  is thrown here and the list is not changed.
+  This path assumes a new title.
+end note
+
+create Recipe
+Command -> Recipe : Recipe(title, type)
+activate Recipe
+Recipe --> Command
+deactivate Recipe
+
+Command -> Recipe : setServingSize(servingSize)
+activate Recipe
+Recipe --> Command
+deactivate Recipe
+
+Command -> Input : addIngredients(recipe, ingredientText)
+activate Input
+loop for each ingredient
+  Input -> Recipe : addIngredient(ingredient)
+  activate Recipe
+  Recipe --> Input
+  deactivate Recipe
+end
+Input --> Command
+deactivate Input
+note right of Command
+  addSteps(...) adds each step the same way.
+  Every part is checked before the next step.
+end note
+
+Command -> Recipes : add(recipe)
+activate Recipes
+Recipes --> Command
+deactivate Recipes
+
+Command -> UI : showMessage(label + " added!")
+activate UI
+UI --> Command
+deactivate UI
+Command -> UI : showAllergenWarnings(recipe)
+activate UI
+UI --> Command
+deactivate UI
+
+Command --> App
+deactivate Command
+@enduml

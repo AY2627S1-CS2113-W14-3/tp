@@ -12,8 +12,8 @@ import java.util.List;
 public class Recipe {
     private static final int DEFAULT_SERVING_SIZE = 1;
 
-    private final String title;
-    private final String type;
+    private String title;
+    private String type;
     private int servingSize;
     private final ArrayList<Ingredient> ingredients;
     private final ArrayList<String> steps;
@@ -46,6 +46,27 @@ public class Recipe {
 
     public String getType() {
         return type;
+    }
+
+    /**
+     * Replaces the recipe's title. Commands must check the new title is not
+     * blank and not already used by another recipe before calling this.
+     *
+     * @param title the new, non-blank title
+     */
+    public void setTitle(String title) {
+        assert title != null && !title.isBlank() : "Commands should reject a blank title before calling setTitle";
+        this.title = title;
+    }
+
+    /**
+     * Replaces the recipe's type.
+     *
+     * @param type the new type, or "" for no type
+     */
+    public void setType(String type) {
+        assert type != null : "Recipe type should never be null; use \"\" for no type";
+        this.type = type;
     }
 
     public int getServingSize() {

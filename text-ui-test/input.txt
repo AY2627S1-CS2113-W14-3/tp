@@ -13,4 +13,9 @@ modify Spice mix s/3
 retrieve Spice mix
 modify Spice mix s/1
 retrieve Spice mix
+add Garlic bread, side s/4 i/2 tbsp butter st/Spread butter st/Toast
+edit 3 title/Cheesy garlic bread n/Add cheese before toasting
+edit 3 title/Spice mix
+edit 9 type/main
+view
 bye
