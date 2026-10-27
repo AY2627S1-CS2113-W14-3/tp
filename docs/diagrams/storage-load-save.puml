@@ -1,0 +1,49 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant ":WhatsCooking" as App
+participant ":Storage" as Storage
+participant "<<class>>\nFiles" as Files
+participant "recipes:RecipeList" as Recipes
+
+App -> Storage : load()
+activate Storage
+Storage -> Files : exists(filePath)
+activate Files
+Files --> Storage : true
+deactivate Files
+Storage -> Files : readAllLines(filePath)
+activate Files
+Files --> Storage : lines
+deactivate Files
+
+loop while index < lines.size()
+  Storage -> Storage : readRecipe(lines, index, recipes)
+  activate Storage
+  note right of Storage
+    Builds one Recipe from title, type,
+    serving size, ingredients, steps and
+    note; returns the next recipe's index.
+  end note
+  Storage -> Recipes : add(recipe)
+  activate Recipes
+  Recipes --> Storage
+  deactivate Recipes
+  Storage --> Storage : index
+  deactivate Storage
+end
+
+Storage --> App : recipes
+deactivate Storage
+
+note over App, Recipes
+  If the file is missing, load() returns an empty list at once.
+  A read or format error throws WhatsCookingException; WhatsCooking
+  then shows a warning and starts with an empty list.
+end note
+@enduml
