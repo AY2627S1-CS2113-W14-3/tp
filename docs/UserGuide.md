@@ -114,6 +114,22 @@ Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
 
 Examples: `retrieve 1` or `retrieve egg taco`.
 
+Expected output for `retrieve egg taco`:
+
+```text
+____________________________________________________________
+egg taco (snack, serves 1)
+Ingredients:
+  1. 3 eggs
+  2. 5 tortillas
+Steps:
+  1. Scramble egg
+  2. Put egg in tortilla
+____________________________________________________________
+Possible allergens: eggs. Check ingredient labels.
+____________________________________________________________
+```
+
 ### Deleting a recipe: `delete`
 
 Removes a recipe from your recipe list permanently.
