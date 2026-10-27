@@ -4,6 +4,7 @@ import seedu.whatscooking.WhatsCookingException;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.StockList;
+import seedu.whatscooking.recipe.StockItem;
 
 /** Matches recipes that can be prepared from stock for a requested serving size. */
 public class StockFilter extends Filter {
@@ -27,7 +28,7 @@ public class StockFilter extends Filter {
 
         for (Ingredient required : scaledRecipe.getIngredients()) {
             double available = 0;
-            for (Ingredient stocked : stockList.getAll()) {
+            for (StockItem stocked : stockList.getAll()) {
                 boolean sameName = stocked.getName().equalsIgnoreCase(required.getName());
                 boolean sameUnit = (stocked.getUnit() == null && required.getUnit() == null)
                         || (stocked.getUnit() != null && required.getUnit() != null

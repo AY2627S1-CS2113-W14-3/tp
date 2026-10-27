@@ -11,6 +11,7 @@ import seedu.whatscooking.allergen.AllergenChecker;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockItem;
 
 /**
  * Handles all console input and output for the application.
@@ -196,14 +197,21 @@ public class Ui {
      *
      * @param stock the list of ingredients to display
      */
-    public void showStockList(List<Ingredient> stock) {
+    public void showStockList(List<StockItem> stock) {
         showLine();
         if (stock.isEmpty()) {
             System.out.println("Your home stock is empty.");
         } else {
             System.out.println("Current Home Stock:");
-            for (Ingredient item : stock) {
-                System.out.println("- " + item.getDisplayDescription());
+            for (StockItem item : stock) {
+                String tag = "";
+                if (item.isExpired()) {
+                    tag = " [EXPIRED]";
+                } else if (item.isExpiringSoon()) {
+                    tag = " [EXPIRING SOON]";
+                }
+                String dateStr = item.getExpiryDate() == null ? "" : " (Expires: " + item.getExpiryDate() + ")";
+                System.out.println("- " + item.getIngredient().getDisplayDescription() + dateStr + tag);
             }
         }
         showLine();

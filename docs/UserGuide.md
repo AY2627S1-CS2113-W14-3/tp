@@ -114,6 +114,22 @@ Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
 
 Examples: `retrieve 1` or `retrieve egg taco`.
 
+Expected output for `retrieve egg taco`:
+
+```text
+____________________________________________________________
+egg taco (snack, serves 1)
+Ingredients:
+  1. 3 eggs
+  2. 5 tortillas
+Steps:
+  1. Scramble egg
+  2. Put egg in tortilla
+____________________________________________________________
+Possible allergens: eggs. Check ingredient labels.
+____________________________________________________________
+```
+
 ### Deleting a recipe: `delete`
 
 Removes a recipe from your recipe list permanently.
@@ -136,28 +152,31 @@ Deleted: egg taco (snack, serves 1)
 
 ### Managing home stock: `stock`
 
-Tracks the ingredients you currently have at home so you know what you can cook. You can add items you bought, remove items you used, and view your current inventory. The stock feature automatically ignores plural forms (e.g., `egg` and `eggs` are treated as the same item).
+Tracks the ingredients you currently have at home so you know what you can cook. You can add items you bought, remove items you used, and view your current inventory. The stock feature automatically ignores plural forms (e.g., `egg` and `eggs` are treated as the same item) and allows you to track expiry dates.
 
-Format: `stock add INGREDIENT`, `stock remove INGREDIENT`, or `stock list`
+Format: `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
 
-* `stock add`: Adds the specified ingredient to your stock. If the ingredient already exists, the quantities are summed.
-* `stock remove`: Subtracts the specified quantity from your stock. If the quantity reaches zero, the item is removed.
-* `stock list`: Displays all ingredients currently in your stock.
+* `stock add`: Adds the specified ingredient to your stock. If the ingredient (with the exact same expiry date) already exists, the quantities are summed.
+* `stock remove`: Subtracts the specified quantity from your stock. The system **prioritizes removing items that are expiring soonest**. If the quantity reaches zero, the item is removed.
+* `stock list`: Displays all ingredients currently in your stock, highlighting expired or soon-to-expire items.
 * **Ingredient Format**: Must follow the same format as recipe ingredients: `QUANTITY [UNIT] NAME` (e.g., `3 eggs`, `200g chicken`).
+* **Expiry Date (`by/`)**: An optional parameter for `add`. Must be in `YYYY-MM-DD` format.
 
 Examples:
-* `stock add 3 eggs` adds 3 eggs to your stock.
-* `stock add 200g chicken` adds 200 grams of chicken.
+* `stock add 3 eggs` adds 3 eggs to your stock without an expiry date.
+* `stock add 200g chicken by/2026-10-31` adds 200 grams of chicken that expires on Oct 31, 2026.
 * `stock list` shows your current inventory.
 
-Expected output for `stock list`:
+Expected output for `stock list` (showing expiry tags):
 
 ```text
+____________________________________________________________
 Current Home Stock:
-
-3 eggs
-
-200 g chicken
+- 3 eggs
+- 200 g chicken (Expires: 2026-10-31)
+- 2 milk (Expires: 2026-10-20) [EXPIRING SOON]
+- 1 cheese (Expires: 2026-10-01) [EXPIRED]
+____________________________________________________________
 ```
 
 Expected output for `stock remove 5 eggs` (insufficient quantity):
@@ -341,5 +360,5 @@ The next time you start the app, your recipes are loaded back from that file aut
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
-* **Delete a recipe** `delete INDEX` or `delete RECIPE_NAME`
-* **Manage home stock** `stock add INGREDIENT`, `stock remove INGREDIENT`, or `stock list`
+* Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
+* Manage home stock `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`

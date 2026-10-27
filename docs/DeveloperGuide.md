@@ -270,43 +270,43 @@ them without a PlantUML plugin. After changing a `.puml` source, regenerate its 
 
 *Section author: Jiang Siyu ([irisiyuj](https://github.com/irisiyuj))*
 
-The `stock` command manages the ingredients the user currently has at home. It allows adding items (`stock add`), removing consumed items (`stock remove`), and viewing the current inventory (`stock list`). Unlike recipes, which store a fixed list of required ingredients, the stock is a mutable collection that grows and shrinks. The feature ignores plural forms to improve usability and ensures items cannot be removed if the user does not have enough. The [User Guide](UserGuide.md#managing-home-stock-stock) describes the command syntax and output.
-
+The `stock` command manages the ingredients the user currently has at home. It allows adding items (`stock add`), removing consumed items (`stock remove`), and viewing the current inventory (`stock list`). Unlike recipes, which store a fixed list of required ingredients, the stock is a mutable collection that grows and shrinks. The feature ignores plural forms to improve usability, tracks expiry dates, and ensures items cannot be removed if the user does not have enough. The [User Guide](UserGuide.md#managing-home-stock-stock) describes the command syntax and output.
 #### Responsibilities and data model
 
 The feature separates the inventory management from command parsing, allowing the underlying data structure to be tested independently of the console loop.
 
-| Component | Responsibility |
-| --- | --- |
+| Component | Responsibility                                                                                                                                          |
+| --- |---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `StockList` | Holds an `ArrayList` of `Ingredient` objects. Provides the logic to add, merge, and remove items. It normalizes names to match singular and plural forms. |
-| `StockCommand` | Parses the `action` (add, remove, list) and `data`. It handles command-level validation and passes structured `Ingredient` objects to `StockList`. |
-| `Ingredient` | Reused from the recipe module. It supplies the quantity, unit and name, allowing the stock to perform numeric operations (addition and subtraction). |
-| `Parser` | Recognizes the `stock` keyword and instantiates the `StockCommand` with the shared `StockList`. |
+| `StockCommand` | Parses the `action` (add, remove, list) and `data`. It handles command-level validation and passes structured `Ingredient` objects to `StockList`.      |
+| `StockItem` | Wraps an `Ingredient` and an optional `LocalDate` expiry date. It provides methods to check if an item is expired or expiring soon.                     |
+| `Ingredient` | Reused from the recipe module. It supplies the quantity, unit and name for the stock operations.                                                        |
+| `Parser` | Recognizes the `stock` keyword and instantiates the `StockCommand` with the shared `StockList`.                                                         |
 
 ![Object diagram of the stock components](diagrams/stock-object.svg)
 
 *Figure 5. The in-memory state of `StockList` after adding "3 eggs" and "200g chicken". Unrelated members are omitted.*
 
-Unlike `Recipe`, the `StockList` does not maintain serving sizes. It relies on an `ArrayList` to preserve insertion order. The `Ingredient` objects stored in the `StockList` are mutable only in their quantity; their name and unit remain final.
+Unlike `Recipe`, the `StockList` does not maintain serving sizes. It relies on an `ArrayList` to preserve insertion order. The `Ingredient` objects stored within `StockItem` are mutable only in their quantity; their name and unit remain final.
+
 
 #### Implementation details
 
 ![Sequence diagram of a successful stock remove command](diagrams/stock-remove.svg)
 *Figure 6. A valid `stock remove` command that successfully subtracts quantities. Exception paths and the application's subsequent save are omitted.*
 
-1. `StockCommand.execute` splits the arguments into an `action` and the remaining `data`. For `add` and `remove`, it attempts to construct a new `Ingredient` from the `data`.
-2. If the format is invalid (e.g., missing quantity), `IllegalArgumentException` is caught and rethrown as a user-facing `WhatsCookingException`.
-3. The `StockList` iterates through its current items. It checks if the ingredient is the same using two criteria:
-    - The units must match (both null or string-equal).
-    - The names must match after normalization (ignoring case and removing a trailing 's').
-4. For `add`, if a match is found, the quantities are summed. If not, the new `Ingredient` is appended. For `remove`, if the requested quantity exceeds the current quantity, a `WhatsCookingException` is thrown. If it exactly equals, the item is removed from the list; otherwise, it is subtracted.
-5. The command logs the successful operation at `FINE` level and calls `Ui.showStockList` or `Ui.showMessage`.
+1. `StockCommand.execute` splits the arguments into an `action` and the remaining `data`. For `add`, it checks for the ` by/` prefix to extract and parse the expiry date using `LocalDate.parse()`.
+2. If the date format is invalid, a `DateTimeParseException` is caught and rethrown as a user-facing `WhatsCookingException`.
+3. For `add`, `StockList` attempts to find an existing `StockItem` with matching name, unit, and expiry date. If found, quantities are summed. If the expiry dates differ, the new item is appended as a separate entry.
+4. For `remove`, the `StockList` collects all matching items and **sorts them by expiry date (earliest first, null dates last)**. It then subtracts the requested quantity from the earliest-expiring items first.
+5. If a removal empties an item's quantity, it is deleted. The command logs the operation and calls `Ui` to display the updated list with `[EXPIRED]` or `[EXPIRING SOON]` tags.
 
-#### Matching rules and floating-point safety
+#### Expiry tracking and floating-point safety
 
-The `StockList` uses a private `normalizeName` method that converts the name to lowercase and removes a trailing 's'. This allows `stock add 3 eggs` and `stock remove 1 egg` to interact with the same item without requiring complex NLP.
+The `StockItem` uses `LocalDate.now()` to determine its state. An item is flagged as `[EXPIRED]` if its date is before today, and `[EXPIRING SOON]` if it expires within the next 3 days. This prevents food waste by visually alerting the user.
 
-When removing items, the implementation calculates `newQuantity = item.getQuantity() - toRemove.getQuantity()`. Because Java uses floating-point arithmetic for `double`, an exact subtraction like `5.0 - 5.0` might theoretically result in `0.000000001`. To prevent leaving ghost items with near-zero quantities, the code checks `if (newQuantity <= 0.0001)` before calling `ingredients.remove(item)`. Otherwise, it updates the quantity via `setQuantity`.
+When removing items, the implementation calculates `newQuantity = item.getQuantity() - toRemove.getQuantity()`. Because Java uses floating-point arithmetic for `double`, an exact subtraction like `5.0 - 5.0` might theoretically result in `0.000000001`. To prevent leaving ghost items, the code checks `if (newQuantity <= 0.0001)` before deleting. Otherwise, it updates via `setQuantity`.
+
 
 #### Alternatives and limitations
 
@@ -316,7 +316,7 @@ A limitation of this implementation is the lack of automatic unit conversion. If
 
 #### Defensive programming and integration
 
-Assertions guard internal assumptions: `StockList` asserts that the incoming `Ingredient` is not null. User input errors are handled separately via `WhatsCookingException` and displayed by the `Ui`. The `StockList` is instantiated once in `WhatsCooking` and passed via the `Parser` to avoid static state, keeping the class testable.
+Assertions guard internal assumptions: `StockList` asserts that the incoming `Ingredient` is not null. User input errors are handled separately via `WhatsCookingException` and displayed by the `Ui`. The `StockList` is instantiated once in `WhatsCooking` and passed via the `Parser` to avoid static state, keeping the class testable. Data persistence handles `LocalDate` by serializing it to a string (or "NONE") during save/load.
 
 #### Automated verification
 
@@ -506,13 +506,16 @@ Run these actions in order, starting with an empty stock. Keep the application r
 | Action | Expected observation |
 | --- | --- |
 | `stock add 3 eggs` | Stock updated; message says "Added to stock: 3 eggs". |
-| `stock add 200g chicken` | Stock now has two different items. |
-| `stock list` | Lists "3 eggs" and "200g chicken". |
-| `stock remove 1 egg` | Case and plural matching work; message says "Removed from stock: 1 egg". |
-| `stock list` | Lists "2.0 eggs" (or similar) and "200g chicken". |
-| `stock remove 5 eggs` | Error: Not enough eggs in stock. You only have 2.0. |
-| `stock remove 2 eggs` | Message says removed; `stock list` no longer shows eggs. |
+| `stock add 2 eggs by/2026-12-31` | Stock updated; message includes the expiry date. |
+| `stock add 200g chicken` | Stock now has three different items (eggs without date, eggs with date, chicken). |
+| `stock list` | Lists the three items. The eggs without a date show no tag. |
+| `stock remove 4 eggs` | Case and plural matching work; it removes the 3 eggs without a date, and 1 egg with a date. |
+| `stock list` | Lists "1.0 eggs (Expires: 2026-12-31)" and "200g chicken". |
+| `stock add 2 eggs by/2020-01-01` | Adds eggs that are already expired. |
+| `stock list` | The newly added eggs will have an `[EXPIRED]` tag at the end. |
+| `stock remove 5 eggs` | Error: Not enough eggs in stock. |
 | `stock add abc` | Error: Invalid ingredient format. |
+| `stock add 1 milk by/31-12-2026` | Error: Invalid date format. Please use YYYY-MM-DD. |
 | `stock unknown` | Error: Unknown stock action. |
 
 ### Adding and editing recipes
