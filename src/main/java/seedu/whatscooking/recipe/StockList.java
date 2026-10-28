@@ -1,9 +1,10 @@
 package seedu.whatscooking.recipe;
 
 import java.util.ArrayList;
-import seedu.whatscooking.WhatsCookingException;
 import java.util.Collections;
 import java.util.List;
+
+import seedu.whatscooking.WhatsCookingException;
 
 /**
  * Holds the ingredients currently available at home.
@@ -37,7 +38,8 @@ public class StockList {
 
     /**
      * Removes an ingredient from the stock.
-     * Throws exception if not found or not enough quantity.
+     * Prioritizes removing items that are expiring soonest.
+     * Throws an exception without modifying the stock if there is not enough quantity.
      *
      * @param toRemove the ingredient to remove
      * @throws WhatsCookingException if the ingredient is not found or there is not enough quantity
@@ -46,14 +48,22 @@ public class StockList {
         assert toRemove != null : "Command should validate before removing";
 
         List<StockItem> matches = new ArrayList<>();
+        double totalAvailable = 0;
+
         for (StockItem item : ingredients) {
             if (isSameIngredient(item, toRemove)) {
                 matches.add(item);
+                totalAvailable += item.getQuantity();
             }
         }
 
         if (matches.isEmpty()) {
             throw new WhatsCookingException("Ingredient not found in stock: " + toRemove.getName());
+        }
+
+        if (totalAvailable + 0.0001 < toRemove.getQuantity()) {
+            throw new WhatsCookingException("Not enough " + toRemove.getName() + " in stock. You only have "
+                    + totalAvailable + " " + (toRemove.getUnit() == null ? "" : toRemove.getUnit()));
         }
 
         matches.sort((a, b) -> {
@@ -76,17 +86,18 @@ public class StockList {
                 break;
             }
 
-            if (item.getQuantity() <= remainingToRemove) {
+            if (item.getQuantity() <= remainingToRemove + 0.0001) {
                 remainingToRemove -= item.getQuantity();
                 ingredients.remove(item);
             } else {
-                item.setQuantity(item.getQuantity() - remainingToRemove);
+                double newQuantity = item.getQuantity() - remainingToRemove;
+                if (newQuantity <= 0.0001) {
+                    ingredients.remove(item);
+                } else {
+                    item.setQuantity(newQuantity);
+                }
                 remainingToRemove = 0;
             }
-        }
-
-        if (remainingToRemove > 0.0001) {
-            throw new WhatsCookingException("Not enough " + toRemove.getName() + " in stock.");
         }
     }
 
