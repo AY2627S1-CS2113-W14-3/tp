@@ -377,6 +377,102 @@ when a later ingredient fails validation.
 * `ModifyWorkflowTest` checks the complete CLI session against `text-ui-test/EXPECTED.txt`.
 * `ServingSizeCompatibilityTest` checks that `add` establishes the size used by later `modify` calls.
 
+### Recipe filtering: `search`
+
+*Section author:  NATHAN BONG NENG QUAN ([NUS-Nbnq]https://github.com/NUS-Nbnq).* 
+
+The `search` command selects recipes using one or more filters. Each filter has the form
+`f/{field}/{keyword}`, where `field` is `name`, `ingredient`, or `stock`. For example,
+`search f/name/chicken f/ingredient/tomato` returns recipes whose titles contain `chicken` and
+whose ingredients contain `tomato`. The [User Guide](UserGuide.md) describes the command syntax and
+user-visible output. This section focuses on the filter objects and their factory; `SearchCommand`
+is responsible only for applying the resulting filters and displaying the matches.
+
+#### Filter responsibilities and class structure
+
+`Filter` defines the common `matches(Recipe)` operation. Each concrete filter owns one matching
+rule, which keeps field-specific logic out of `SearchCommand` and makes each rule independently
+testable.
+
+![Class diagram of the search filter implementations](diagrams/search-filter-classes.svg)
+
+*Figure 5. The filter hierarchy and the model objects read by each implementation.*
+[PlantUML source](diagrams/search-filter-classes.puml)
+
+| Component | Responsibility |
+| --- | --- |
+| `Filter` | Defines the common recipe-matching contract. |
+| `NameFilter` | Performs a case-insensitive substring search on the recipe title. |
+| `IngredientFilter` | Performs a case-insensitive substring search on every ingredient name and succeeds on the first match. |
+| `StockFilter` | Scales a copy of the recipe to the requested serving size, then checks whether stock contains enough of every required ingredient. |
+| `StockList` | Supplies the current stock entries; it is read but not modified by a filter. |
+| `SearchCommand` | Applies every filter to each recipe, retaining a recipe only when all filters match. |
+
+`NameFilter` and `IngredientFilter` lowercase both the stored keyword and the value being checked.
+They use substring matching rather than exact matching, so `f/name/chick` matches `Chicken Pasta`.
+`IngredientFilter` checks ingredient names only; quantity and unit text are not searched separately.
+An empty recipe therefore cannot satisfy an ingredient filter.
+
+`StockFilter` does not mutate the recipe being searched. It creates a temporary recipe containing
+the original ingredients, scales that copy to `targetServingSize`, and then compares every scaled
+ingredient with the entries returned by `StockList.getAll()`. Names and units are compared without
+regard to case. Matching stock entries are accumulated, so separate stock entries with the same
+name and unit can satisfy one requirement together. A recipe matches only if the accumulated
+quantity is sufficient for every required ingredient; a small `0.0001` tolerance accounts for
+floating-point representation. Scaling may throw an `IllegalArgumentException` for an invalid
+recipe serving size or target size, which is propagated through the filter contract.
+
+#### Filter creation and validation
+
+`FilterFactory` is a stateless utility class. It receives the raw search arguments and the active
+`StockList`, then returns an `ArrayList<Filter>` in the same order as the input tokens. The factory
+also performs all syntax validation before `SearchCommand` starts scanning recipes.
+
+![Class diagram of FilterFactory and its created filters](diagrams/filter-factory-classes.svg)
+
+*Figure 6. `FilterFactory` validates filter syntax and selects the concrete filter class.*
+[PlantUML source](diagrams/filter-factory-classes.puml)
+
+The factory first rejects an empty argument string. It splits the remaining input on whitespace,
+so extra spaces are harmless. Each token must start with `f/` and contain exactly a non-blank field
+and keyword after splitting at most twice on `/`. The field selects the implementation:
+
+| Input field | Created object | Keyword interpretation |
+| --- | --- | --- |
+| `name` | `NameFilter` | Case-insensitive title substring |
+| `ingredient` | `IngredientFilter` | Case-insensitive ingredient-name substring |
+| `stock` | `StockFilter` | Positive integer requested serving size |
+
+For `stock`, the factory parses the keyword as a positive `int` and injects the active `StockList`
+into the new filter. Unknown fields, malformed structure, blank values, non-numeric serving sizes,
+zero, negative values, and integers outside the `int` range are converted to user-facing
+`WhatsCookingException`s with stable messages. This keeps parser errors at the boundary and avoids
+partially executing a search with an invalid filter.
+
+#### Search evaluation and complexity
+
+`SearchCommand.internalExecute` asks the factory for the filters, then visits each recipe in list
+order. For each recipe it evaluates filters in input order and stops at the first failure. This
+short-circuiting preserves the AND semantics while avoiding unnecessary matching work. Matching
+recipe indices are returned in their original order; `execute` formats those recipes through `Ui`.
+
+If there are R recipes and F filters, the outer search performs at most R x F filter calls. Name
+and ingredient filters scan the title or ingredient list. A stock filter scans the recipe's I
+ingredients and the S stock entries, giving O(I x S) matching work for that recipe in the current
+implementation. The lists are expected to be small, so direct scans keep the design simple and
+avoid maintaining a separate index that could become stale after stock changes.
+
+#### Automated verification
+
+* `FilterTest` checks case-insensitive name and ingredient matching, stock scaling, insufficient
+  stock, and invalid serving sizes.
+* `SearchTest` checks empty results, output, multiple-filter AND semantics, and whitespace handling.
+* `ParserTest` checks that the application supplies the active `StockList` to a stock search.
+
+The diagrams intentionally omit private implementation details of `Recipe`, `Ingredient`, and
+`StockList`. Their public operations are shown only where they explain a filter's dependency or
+matching behavior.
+
 ### Built-in allergen checking (v2.0)
 
 *Section author: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)).*
