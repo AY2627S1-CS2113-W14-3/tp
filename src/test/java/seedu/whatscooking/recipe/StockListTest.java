@@ -102,4 +102,26 @@ public class StockListTest {
         assertThrows(WhatsCookingException.class,
                 () -> stock.remove(new StockItem(new Ingredient("3 eggs"), null)));
     }
+
+    @Test
+    public void remove_insufficientQuantity_leavesStockUnchanged() {
+        StockList stock = new StockList();
+        stock.add(new StockItem(new Ingredient("3 eggs"), null));
+
+        assertThrows(WhatsCookingException.class,
+                () -> stock.remove(new StockItem(new Ingredient("5 eggs"), null)));
+        assertEquals(1, stock.getAll().size());
+        assertEquals(3.0, stock.getAll().get(0).getQuantity());
+    }
+
+    @Test
+    public void remove_multipleBatchesWithFloatingPointError_removesCompletely() throws WhatsCookingException {
+        StockList stock = new StockList();
+        stock.add(new StockItem(new Ingredient("0.1 kg flour"), LocalDate.now().plusDays(5)));
+        stock.add(new StockItem(new Ingredient("0.2 kg flour"), LocalDate.now().plusDays(10)));
+
+        stock.remove(new StockItem(new Ingredient("0.3 kg flour"), null));
+
+        assertTrue(stock.getAll().isEmpty());
+    }
 }

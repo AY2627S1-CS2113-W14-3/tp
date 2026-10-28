@@ -777,8 +777,8 @@ Run these actions in order, starting with an empty stock. Keep the application r
 | `stock add 2 eggs by/2026-12-31` | Stock updated; message includes the expiry date. |
 | `stock add 200g chicken` | Stock now has three different items (eggs without date, eggs with date, chicken). |
 | `stock list` | Lists the three items. The eggs without a date show no tag. |
-| `stock remove 4 eggs` | Case and plural matching work; it removes the 3 eggs without a date, and 1 egg with a date. |
-| `stock list` | Lists "1.0 eggs (Expires: 2026-12-31)" and "200g chicken". |
+| `stock remove 4 eggs` | Case and plural matching work; it removes the 2 dated eggs first, then 2 of the undated eggs. |
+| `stock list` | Lists "1.0 eggs" (no date, no tag) and "200g chicken". |
 | `stock add 2 eggs by/2020-01-01` | Adds eggs that are already expired. |
 | `stock list` | The newly added eggs will have an `[EXPIRED]` tag at the end. |
 | `stock remove 5 eggs` | Error: Not enough eggs in stock. |
