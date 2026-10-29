@@ -5,24 +5,22 @@ skinparam defaultFontName SansSerif
 skinparam defaultFontSize 15
 
 start
+:User enters an edit command;
 :Read the recipe number;
-if () then ([not a positive whole number\nor no such recipe])
-  :Show error;
-  stop
+if () then ([valid number and\nrecipe exists])
+  :Find the title/, type/ and n/ values;
+  if () then ([at least one value given,\nno prefix repeated,\nno value empty])
+    if () then ([new title not used by\nanother recipe])
+      :Apply every new value to the recipe;
+      :Show the updated recipe;
+    else ([else])
+      :Show duplicate-title error;
+    endif
+  else ([else])
+    :Show format error;
+  endif
 else ([else])
+  :Show invalid-number error;
 endif
-:Find the title/, type/ and n/ values;
-if () then ([no prefix given, a prefix repeated,\ntext before the first prefix,\nor an empty value])
-  :Show error;
-  stop
-else ([else])
-endif
-if () then ([new title used by\nanother recipe])
-  :Show error;
-  stop
-else ([else])
-endif
-:Apply every new value to the recipe;
-:Show the updated recipe;
 stop
 @enduml
