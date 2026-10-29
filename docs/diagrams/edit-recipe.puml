@@ -1,0 +1,67 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant "<<class>>\nWhatsCooking" as App
+participant ":EditCommand" as Command
+participant "recipes:RecipeList" as Recipes
+participant "<<class>>\nRecipeInputParser" as Input
+participant "recipe:Recipe" as Recipe
+participant ":Ui" as UI
+
+App -> Command : execute(recipes, ui)
+activate Command
+Command -> Command : parseIndex(parts[0])
+activate Command
+Command --> Command : index
+deactivate Command
+Command -> Recipes : get(index - 1)
+activate Recipes
+Recipes --> Command : recipe
+deactivate Recipes
+Command -> Command : getValue(fields, TITLE_PREFIX)
+activate Command
+Command --> Command : newTitle
+deactivate Command
+note right of Command
+  This example changes title only.
+  getValue for type/ and n/ returns null;
+  those calls and prefix checks are omitted.
+end note
+Command -> Input : parseTitle(newTitle)
+activate Input
+Input --> Command : validated title
+deactivate Input
+Command -> Recipe : getTitle()
+activate Recipe
+Recipe --> Command : current title
+deactivate Recipe
+opt newTitle differs from current title ignoring case
+  Command -> Recipes : containsTitle(newTitle)
+  activate Recipes
+  Recipes --> Command : false
+  deactivate Recipes
+end
+note right of Command
+  A duplicate or invalid value throws before any setter.
+  This example assumes all checks pass.
+end note
+Command -> Recipe : setTitle(newTitle)
+activate Recipe
+Recipe --> Command
+deactivate Recipe
+Command -> Command : buildResultMessage(index, recipe)
+activate Command
+Command --> Command : message
+deactivate Command
+Command -> UI : showMessage(message)
+activate UI
+UI --> Command
+deactivate UI
+Command --> App
+deactivate Command
+@enduml

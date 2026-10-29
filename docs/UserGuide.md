@@ -2,18 +2,39 @@
 
 ## Introduction
 
-{Give a product intro}
+WhatsCooking is a command-line recipe manager for home cooks who prefer typing. Keep recipes with
+ingredients, steps and notes, search your collection, scale ingredient quantities for different
+serving sizes, check possible allergens and record the ingredients available at home.
+
+This guide describes v2.0. Commands operate on one local collection; no account or internet connection
+is required while using the application.
 
 ## Quick Start
 
-{Give steps to get started quickly}
+1. Install **Java 25**. Run `java -version` in a terminal and check that it reports version 25.
+2. Download `whatscooking.jar` from the matching
+   [WhatsCooking release](https://github.com/AY2627S1-CS2113-W14-3/tp/releases).
+3. Put it in a folder you can write to. Open a terminal in that folder and run:
 
-1. Ensure that you have Java 25 or above installed.
-1. Down the latest version of `Duke` from [here](http://link.to/duke).
+   ```text
+   java -ea -jar whatscooking.jar
+   ```
+
+4. Try `add Toast i/2 bread st/Toast`, then `view` and `retrieve Toast`.
+5. Enter `bye` (or `exit`) to leave the application.
+
+Launch from a terminal: double-clicking the JAR may not open a usable command-line window. Use the
+same working folder each time because recipes are stored in `data/whatscooking.txt` relative to that
+folder. A write-protected folder prevents saving. Home stock is kept only for the current session.
+
+Developers can build the JAR with `./gradlew shadowJar` (Windows: `.\gradlew.bat shadowJar`);
+the output is `build/libs/whatscooking.jar`.
 
 ## Features
 
-{Give detailed description of each feature}
+Type one command per line. Command words and prefixes are lowercase. Uppercase words in the formats
+below are placeholders; replace them with your values. Square brackets mark optional parts and are
+not typed literally. `view` lists the recipe numbers used by commands that accept an index.
 
 ### Adding a recipe: `add`
 Adds a new recipe to your recipe list.
@@ -125,7 +146,6 @@ Ingredients:
 Steps:
   1. Scramble egg
   2. Put egg in tortilla
-____________________________________________________________
 Possible allergens: eggs. Check ingredient labels.
 ____________________________________________________________
 ```
@@ -167,14 +187,14 @@ Examples:
 * `stock add 200g chicken by/2026-10-31` adds 200 grams of chicken that expires on Oct 31, 2026.
 * `stock list` shows your current inventory.
 
-Expected output for `stock list` (showing expiry tags):
+Example output for `stock list`, assuming today's date is **2026-10-29**:
 
 ```text
 ____________________________________________________________
 Current Home Stock:
 - 3 eggs
-- 200 g chicken (Expires: 2026-10-31)
-- 2 milk (Expires: 2026-10-20) [EXPIRING SOON]
+- 200 g chicken (Expires: 2026-10-31) [EXPIRING SOON]
+- 2 milk (Expires: 2026-10-30) [EXPIRING SOON]
 - 1 cheese (Expires: 2026-10-01) [EXPIRED]
 ____________________________________________________________
 ```
@@ -186,6 +206,10 @@ Error: Not enough eggs in stock. You only have 3.0
 ```
 
 > **Caution:** The stock feature does not do unit conversions. If you add `1 kg chicken` and try to remove `500 g chicken`, the command will fail because the units (`kg` and `g`) do not match.
+
+Expiry dates before today are marked `[EXPIRED]`; today and the following three days are marked
+`[EXPIRING SOON]`. These labels do not remove items automatically. **Stock and its expiry dates are
+not saved across restarts** in this version.
 
 ### Built-in allergen warnings
 
@@ -231,26 +255,95 @@ cross-contact or ingredients named in other languages. It also cannot understand
 negation: `coconut milk`, `peanut butter` and `egg-free mix` can produce extra warnings because their
 names contain listed keywords. Check the actual ingredient labels and suitability yourself.
 
-This version does not suggest or swap replacement ingredients. Warnings are recalculated from the
-current ingredient names, including after saving and restarting the application.
+Warnings are recalculated from the current ingredient names, including after saving and restarting
+the application. Use `substitute` below to view cooking alternatives for supported ingredients.
+
+### Viewing ingredient alternatives: `substitute`
+
+Shows possible alternatives for supported ingredients in an existing recipe.
+
+Format: `substitute RECIPE_NAME`
+
+* Use the **full recipe title**, ignoring case and surrounding whitespace. This command does not
+  accept a recipe index; a numeric value is interpreted as a literal recipe title.
+* Suggestions refer to the ingredient numbers shown by `retrieve`, in the same order. Unsupported
+  ingredients are omitted; repeated ingredients retain their own numbers.
+* Matching uses the **complete ingredient name**, ignoring case, repeated whitespace and hyphens.
+  For example, `WHOLE WHEAT-FLOUR` matches `whole wheat flour`. It does not guess from individual
+  words: `coconut milk`, `egg-free mix`, `salted butter` and `peanut butter sauce` have no entry.
+* The command does not swap ingredients or calculate replacement amounts. Your original recipe,
+  serving size and stock stay unchanged. Check a suitable recipe before using an alternative.
+
+The complete built-in catalogue is:
+
+| Recognised ingredient names | Alternative to consider | Context |
+| --- | --- | --- |
+| `milk`, `cow milk`, `cow's milk` | Rice drink | Cooking or baking; flavour and nutrition differ. |
+| `butter` | Milk-free margarine | Spreading or baking; check the product's instructions. |
+| `egg`, `eggs` | Mashed banana | Some baked goods only; adds flavour and cannot replace eggs in omelettes or meringues. |
+| `peanut butter` | Sunflower seed butter | Spreads or suitable baking recipes; check seed allergies. |
+| `almond butter`, `cashew butter` | Sunflower seed butter | Spreads or suitable baking recipes; check seed allergies. |
+| `wheat flour`, `whole wheat flour` | Wheat-free flour blend | Follow a tested recipe and the blend's instructions. |
+
+These cooking ideas draw on [FARE's substitution guide](https://www.foodallergy.org/resources/substitutions-common-allergens-pdf)
+and the [Kids with Food Allergies substitution guides](https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/).
+The application's catalogue is deliberately narrower than its nine-category warning dictionary.
+There are no built-in suggestions for fish, shellfish, soy or sesame, or for other unlisted names.
+
+**An alternative can contain other allergens.** Check all relevant allergies, product labels and
+cross-contact. A suggestion, or the absence of one, does not establish that any food is safe.
+The command cannot evaluate a recipe's cooking method, an allergy profile or nutritional needs.
+
+Example:
+
+```text
+add Cake, dessert s/2 i/1 cup milk, 2 eggs st/Bake
+substitute Cake
+```
+
+Expected output:
+
+```text
+____________________________________________________________
+Substitution ideas for Cake:
+  1. milk -> rice drink
+     For cooking or baking; flavour and nutrition differ from cow's milk.
+  2. eggs -> mashed banana
+     For some baked goods only; adds banana flavour. Not for omelettes or meringues.
+Check all allergies, product labels and cross-contact; alternatives may contain allergens.
+Use a suitable recipe for amounts. Your recipe and quantities have not been changed.
+____________________________________________________________
+```
+
+For a recipe without supported names, the output says
+`No built-in suggestions for the recorded ingredient names.` and still shows the caution.
+`substitute` without a title reports usage; `substitute Missing` reports `Recipe not found: Missing`.
 
 ### Searching for recipes: `search`
-Searches recipes using one or more filters for the recipe name and/or its ingredients.
+Searches recipes using one or more filters for the title, ingredients or available stock.
 
-Format: `search f/{name/ingredient}/{KEYWORD} [f/{name/ingredient}/{KEYWORD} ...]`
+Format: `search f/{name/ingredient/stock}/{KEYWORD} [f/{name/ingredient/stock}/{KEYWORD} ...]`
 
 * Use `f/name/KEYWORD` to match `KEYWORD` against a recipe name.
 * Use `f/ingredient/KEYWORD` to match `KEYWORD` against an ingredient name.
-* Matching is case-insensitive and compares the complete name or ingredient text.
+* Title and ingredient matching use case-insensitive **substrings**: `chick` matches `Chicken Pasta`.
+* Use `f/stock/SERVINGS` to find recipes for which stock has enough of each required ingredient at
+  the requested positive whole-number serving size. This checks quantities without consuming stock
+  or resizing your saved recipes. An ingredient-free recipe also passes this filter.
 * Multiple filters are combined with AND logic: a recipe must satisfy every filter.
-* Separate filters with spaces. Extra spaces before, between, or after filters are allowed.
-* The filter type and keyword are required. The filter must be either `name` or `ingredient`.
+* Separate filters with spaces. Keywords cannot contain spaces; use a shorter substring instead.
+* The filter type and keyword are required. Supported fields are `name`, `ingredient` and `stock`.
+* Results follow the original recipe order, not alphabetical order.
+* Stock matching requires the same ingredient name and unit, ignoring case. It does not convert
+  units or treat singular/plural names as equivalent, unlike `stock add/remove`. Expired stock is
+  included in the quantity check; inspect `stock list` and ingredient suitability separately.
 
 Examples:
 
-* `search f/name/Omelette` finds the recipe whose name is `Omelette`, ignoring letter case.
-* `search f/ingredient/chicken` finds recipes with an ingredient named `chicken`, ignoring letter case.
-* `search f/name/Chicken f/ingredient/chicken` finds recipes whose name is `Chicken` and which contain an ingredient named `chicken`.
+* `search f/name/Omelette` finds titles containing `Omelette`, ignoring letter case.
+* `search f/ingredient/chicken` finds ingredient names containing `chicken`, ignoring letter case.
+* `search f/name/Chicken f/ingredient/chicken` combines both requirements.
+* `search f/stock/2` finds recipes whose ingredients are available for two servings.
 
 Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
 ### Viewing all recipes: `view`
@@ -288,7 +381,9 @@ Format: `modify RECIPE_NAME s/NEW_SERVING_SIZE`
 * Scaled quantities with an infinite recurring decimal expansion are rounded to at most two decimal places for display.
   For example, `1 ÷ 3` is displayed as `0.33`.
 * Rounding affects only the displayed values. The application stores exact ingredient quantities internally,
-  so rounding for display does not affect subsequent calculations.
+  so rounding for display does not affect subsequent calculations **within the current session**.
+  Saving and restarting stores/reloads decimal approximations, so exact fraction round trips are not
+  guaranteed across restarts.
 * If the new serving size is the same as the current serving size, no changes are made.
 
 Examples:
@@ -340,25 +435,37 @@ Possible errors:
 
 ## Saving the data
 
-Your recipes are saved automatically to `data/whatscooking.txt` after every command. There is no need to save manually.
+Your recipes are saved automatically to `data/whatscooking.txt` after every successful command.
+There is no need to save manually. The path is relative to the terminal's working folder.
 
 The next time you start the app, your recipes are loaded back from that file automatically.
+
+Stock is session-only and is not written to this file. If the recipe file is corrupted or unreadable,
+the app shows an error and starts with an empty list. Back up the file before continuing: a later
+successful command can overwrite it with the current list.
+
+### Coming soon (not implemented in v2.0)
+
+Editing individual ingredients or steps, ratings, times-cooked counts, cooking-time fields and filters,
+a standalone `cookable` command, recipe export through `share`, and automatic ingredient swaps are
+not available. Use only the commands documented in the summary below.
 
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?
 
-**A**: Copy the `data/whatscooking.txt` file from your old computer to the same location (the folder where the app's jar file is) on your new computer.
+**A**: Close the app and copy `data/whatscooking.txt` into a `data` subfolder of the working folder
+you will use on the new computer. Home stock is not included in this file.
 
 ## Command Summary
 
-{Give a 'cheat sheet' of commands here}
-
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
 * Edit a recipe's title, type or note `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`
-* Search recipes `search f/{name/ingredient}/{KEYWORD}`
+* Search recipes `search f/{name/ingredient/stock}/{KEYWORD} [...]`
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
+* View ingredient alternatives `substitute RECIPE_NAME`
 * Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
 * Manage home stock `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
+* Exit `bye` or `exit`

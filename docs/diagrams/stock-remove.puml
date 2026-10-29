@@ -1,38 +1,62 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
 
-box "Logic" #F5F5F5
-participant "Parser" as Parser
-participant "StockCommand" as StockCmd
-participant "Ui" as Ui
-end box
+participant "<<class>>\nWhatsCooking" as App
+participant ":StockCommand" as Command
+participant "stockList:StockList" as Stock
+participant "item:StockItem" as Item
+participant ":Ui" as UI
 
-box "Model" #F5F5F5
-participant "StockList" as Stock
-participant "StockItem" as Item
-participant "Ingredient" as Ing
-end box
-
-User -> Ui : "stock remove 2 eggs"
-Ui -> Parser : parse("stock remove 2 eggs", stockList)
-Parser -> StockCmd : new StockCommand(...)
-StockCmd -> Ing : new Ingredient("2 eggs")
-Ing --> StockCmd : ingredient
-StockCmd -> Item : new StockItem(ingredient, null)
-Item --> StockCmd : stockItem
-
-StockCmd -> Stock : remove(stockItem)
-
+App -> Command : execute(recipes, ui)
+activate Command
+note right of Command
+  Parse "remove 2 eggs" and construct toRemove.
+  Parser and temporary object creation are omitted.
+end note
+Command -> Stock : remove(toRemove)
 activate Stock
-Stock -> Stock : find all matching StockItems
-Stock -> Stock : sort by expiry date (earliest first)
-alt total quantity is enough
-    Stock -> Item : setQuantity(new quantity)
-    Stock --> StockCmd : success
-else insufficient quantity
-    Stock --> StockCmd : throw WhatsCookingException
-end
+Stock -> Stock : collect matches and validate total quantity
+activate Stock
+Stock --> Stock
 deactivate Stock
+note right of Stock
+  Missing or insufficient stock throws before any change.
+  The remainder shows a successful removal only.
+end note
+Stock -> Stock : sort matches by expiry (undated last)
+activate Stock
+Stock --> Stock
+deactivate Stock
+loop matching batches while remainingToRemove > 0
+  alt batch is consumed completely (within tolerance)
+    Stock -> Stock : remove batch and reduce remainingToRemove
+    activate Stock
+    Stock --> Stock
+    deactivate Stock
+  else batch has a remainder
+    Stock -> Item : setQuantity(newQuantity)
+    activate Item
+    Item --> Stock
+    deactivate Item
+    note right of Stock : Set remainingToRemove to zero.
+  end
+end
+Stock --> Command
+deactivate Stock
+Command -> UI : showMessage("Removed from stock: 2 eggs")
+activate UI
+UI --> Command
+deactivate UI
+Command --> App
+deactivate Command
 
-StockCmd -> Ui : showMessage("Removed...")
-
+note over Stock, Item
+  Self-calls are pseudocode for in-method work.
+  Quantity/name getters and tiny-residual cleanup are omitted.
+end note
 @enduml

@@ -1,0 +1,54 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant "<<class>>\nWhatsCooking" as App
+participant ":SubstituteCommand" as Command
+participant "recipes:RecipeList" as Recipes
+participant "recipe:Recipe" as Recipe
+participant "<<class>>\nSubstitutionAdvisor" as Advisor
+participant ":Ui" as UI
+
+App -> Command : execute(recipes, ui)
+activate Command
+Command -> Recipes : getByName(name)
+activate Recipes
+Recipes --> Command : recipe
+deactivate Recipes
+Command -> Recipe : getIngredients()
+activate Recipe
+Recipe --> Command : ingredients
+deactivate Recipe
+Command -> Advisor : suggest(ingredients)
+activate Advisor
+loop each ingredient in recipe order
+  Advisor -> Advisor : normalize(ingredient.getName())
+  activate Advisor
+  Advisor --> Advisor : normalized name
+  deactivate Advisor
+  opt complete name matches a catalogue rule
+    Advisor -> Advisor : append suggestion with original ingredient number
+    activate Advisor
+    Advisor --> Advisor
+    deactivate Advisor
+  end
+end
+Advisor --> Command : immutable suggestions
+deactivate Advisor
+Command -> UI : showSubstitutionSuggestions(recipe, suggestions)
+activate UI
+UI --> Command
+deactivate UI
+Command --> App
+deactivate Command
+
+note over Advisor, UI
+  Suggestion creation and list insertion are pseudocode.
+  Ingredient getters, invalid-name paths and the main-loop save are omitted.
+  UI handles both an empty list and a list of suggestions.
+end note
+@enduml

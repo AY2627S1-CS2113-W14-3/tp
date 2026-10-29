@@ -6,7 +6,7 @@ skinparam defaultFontSize 15
 skinparam sequenceMessageAlign center
 hide footbox
 
-participant ":WhatsCooking" as App
+participant "<<class>>\nWhatsCooking" as App
 participant ":AddCommand" as Command
 participant "<<class>>\nRecipeInputParser" as Input
 participant "recipes:RecipeList" as Recipes
@@ -38,7 +38,12 @@ end note
 create Recipe
 Command -> Recipe : Recipe(title, type)
 activate Recipe
-Recipe --> Command
+note right of Recipe
+  Initialize servingSize to 1,
+  empty ingredients and steps,
+  and an empty note.
+end note
+Recipe --> Command : recipe
 deactivate Recipe
 
 Command -> Recipe : setServingSize(servingSize)

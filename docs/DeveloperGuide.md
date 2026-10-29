@@ -14,7 +14,26 @@
   the Architecture and Recipe persistence sections of this Developer Guide and their diagrams. All generated
   text was reviewed and checked against the code by Cheuk Yin.
 
-## Design & implementation
+* Documentation structure and UML presentation were informed by the
+  [AB3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html) and
+  [AB3 Developer Guide](https://github.com/se-edu/addressbook-level3/blob/master/docs/DeveloperGuide.md).
+  The WhatsCooking diagrams model this repository; no AB3 application code was copied for these changes.
+* Substitution ideas were adapted into a limited name catalogue from
+  [FARE's common-allergen substitutions](https://www.foodallergy.org/resources/substitutions-common-allergens-pdf)
+  and [Kids with Food Allergies](https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/).
+  The lookup implementation and its quantities-unchanged contract are specific to WhatsCooking.
+* AI assistance: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)) used Codex to assist with
+  the substitution implementation, tests, documentation and UML corrections.
+
+## Setting up and getting started
+
+See the [project README](../README.md) for setup and build instructions. Use Java 25 for
+builds and execution. `./gradlew check shadowJar` (Windows: `.\gradlew.bat check shadowJar`)
+runs JUnit and Checkstyle and produces `build/libs/whatscooking.jar`.
+
+<a id="design--implementation"></a>
+
+## Design
 
 ### Architecture and command execution
 
@@ -41,15 +60,15 @@ This section describes the loop, how commands are dispatched and how errors and 
 
 ![Class diagram of the main application components](diagrams/architecture-classes.svg)
 
-*Figure 1. Main components and their relationships. The eight other `Command` subclasses are grouped
-into one box; their members and the model classes' members are omitted.*
+*Main application classes and their dependencies. Representative command subclasses are shown
+as separate classes. Logging/error helpers, stock-specific wiring and unrelated members are omitted.*
 [PlantUML source](diagrams/architecture-classes.puml)
 
 Each command word maps to its own `Command` subclass, rather than one class branching on the command word.
 `Parser` contains the only `switch`, and each case is a single line, so adding a command means adding a new
 file and one line. This also lets team members develop different commands in separate files without
-editing the same method. `Parser` and `AppLogger` are utility classes with private constructors because
-they keep no state.
+editing the same method. `Parser` is a stateless utility with a private constructor. `AppLogger`
+also has a private constructor, but keeps a flag to configure the shared logging handlers only once.
 
 `StockList` is created once in `main` and passed through `Parser.parse(fullCommand, stockList)` to
 `StockCommand` and `SearchCommand`, which need it. The shorter `Parser.parse(fullCommand)` overload creates
@@ -59,7 +78,7 @@ a temporary empty `StockList` and is used by tests that do not involve stock.
 
 ![Sequence diagram of one iteration of the main loop](diagrams/main-loop.svg)
 
-*Figure 2. One iteration of the main loop, for a successful command and for an invalid one. The
+*One successful iteration of the main loop. Error handling is described below; the
 calls each command makes to `RecipeList` and `Ui` are covered in the feature sections.*
 [PlantUML source](diagrams/main-loop.puml)
 
@@ -133,6 +152,84 @@ accept. The [User Guide](UserGuide.md#viewing-all-recipes-view) describes the co
 * `ViewCommandTest` checks that viewing leaves both an empty and a populated recipe list unchanged.
 * `RecipeTest` covers the skeleton `Recipe` accessors and defaults.
 
+### Serving-size model
+
+*Section author: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)).*
+
+The command handles user input and reporting; the recipe model owns the calculation and update.
+This keeps the resizing rules available to callers other than the CLI.
+
+| Component | Responsibility |
+| --- | --- |
+| `Parser` | Recognizes `modify` and passes the remaining arguments to `ModifyCommand`. |
+| `ModifyCommand` | Validates the name/size arguments, locates the recipe, handles an unchanged size and reports success or errors. |
+| `RecipeList` | Finds the first recipe whose full title matches, ignoring case and surrounding whitespace. |
+| `Recipe` | Calculates and validates every new quantity before applying any changes. |
+| `Ingredient` | Keeps the immutable name and unit separate from the replaceable quantity; formats quantities for output. |
+| `IngredientQuantity` | Stores an exact fraction and returns new, reduced fractions when scaling. This class is package-private and immutable. |
+| `Ui` | Displays the previous and new serving sizes and the updated ingredient list. |
+
+![Class diagram of serving-size modification](diagrams/modify-classes.svg)
+
+*Classes involved in resizing. Only relevant members and relationships are shown;
+`~` indicates package-private access.*
+[PlantUML source](diagrams/modify-classes.puml)
+
+### Allergen checking design
+
+*Section author: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)).*
+
+The feature separates matching from console formatting so the same rules can be reused and tested
+without running the application loop.
+
+| Component | Responsibility |
+| --- | --- |
+| `Allergen` | Defines each category's display name and immutable list of English keywords; matches a name against those keywords. |
+| `AllergenChecker` | Examines the supplied `Ingredient` objects and returns the distinct matching categories. It has no recipe-specific state. |
+| `Ingredient` | Supplies the name separately from its quantity and unit, so quantities and measurement units are not scanned. |
+| `Ui` | Formats the warning consistently for a newly added recipe and a retrieved recipe. |
+| `AddCommand` | Calls `Ui.showAllergenWarnings(recipe)` only after input validation and successful insertion. |
+| `RetrieveCommand` | Uses the existing `Ui.showRecipe` overloads; both eventually display one `Recipe` and its warning. |
+
+![Class diagram of the allergen-checking components](diagrams/allergen-classes.svg)
+
+*Dependencies relevant to allergen checking. Unrelated members and classes are omitted.*
+[PlantUML source](diagrams/allergen-classes.puml)
+
+No allergen flag is stored in `Recipe` or in the save file. `AllergenChecker.findAllergens` derives a
+new result from the current ingredient names each time it is called. Consequently, recipes loaded by
+`Storage` receive the same check as newly created recipes, and scaling quantities does not invalidate
+the result. Existing files remain compatible because the feature adds no persistent fields. The
+returned set is unmodifiable; callers cannot mutate a result or use it to change a recipe.
+
+### Ingredient substitution design
+
+*Section author: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)).*
+
+The `substitute` command offers cooking ideas without modifying recipe ingredients or quantities.
+It shares the existing recipe model but uses its own conservative catalogue. A broad keyword match
+is useful for a caution, whereas a replacement suggestion needs a more specific ingredient identity.
+
+| Class | Responsibility |
+| --- | --- |
+| `SubstituteCommand` | Requires a full recipe title, resolves it and delegates advice generation and display. |
+| `RecipeList` / `Recipe` / `Ingredient` | Supply the current recipe and ingredient names; existing objects remain unchanged. |
+| `SubstitutionAdvisor` | Owns six immutable catalogue rules and matches complete normalized names. |
+| `SubstitutionSuggestion` | Immutable record holding the original ingredient number, name, alternative and usage note. |
+| `Ui` | Displays suggestions or the no-match message, followed by the same suitability and quantity cautions. |
+
+![Class diagram of ingredient substitution advice](diagrams/substitution-classes.svg)
+
+*Substitution advice dependencies. Private catalogue rules and record accessors are omitted.*
+[PlantUML source](diagrams/substitution-classes.puml)
+
+The result is a new immutable list of immutable values, rather than references to mutable ingredient
+quantities. There is no cached advice, allergy profile or new storage field. Advice generated after
+loading, renaming or scaling a recipe therefore uses its current ingredients. The existing main loop
+still saves recipes after successful commands, including this read-only command.
+
+## Implementation
+
 ### Recipe persistence: saving and loading
 
 *Section author: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)).*
@@ -199,7 +296,7 @@ another computer.
 
 ![Sequence diagram of loading recipes at startup](diagrams/storage-load-save.svg)
 
-*Figure 3. Loading a data file that exists and is valid. The calls `readRecipe` makes to `Recipe` and
+*Loading a data file that exists and is valid. The calls `readRecipe` makes to `Recipe` and
 `Ingredient` are omitted; the error paths are described in the text.*
 [PlantUML source](diagrams/storage-load-save.puml)
 
@@ -269,26 +366,10 @@ two-serving recipe containing 2 eggs and 100 g cheese to four servings produces 
 cheese. Ingredient names, units, recipe title, type, preparation steps and note remain unchanged.
 The [User Guide](UserGuide.md#modifying-a-recipe-modify) describes the command syntax and output.
 
-#### Responsibilities and quantity representation
+The [serving-size model](#serving-size-model) describes the class responsibilities and
+relationships. The following sections explain the calculation and command execution.
 
-The command handles user input and reporting; the recipe model owns the calculation and update.
-This keeps the resizing rules available to callers other than the CLI.
-
-| Component | Responsibility |
-| --- | --- |
-| `Parser` | Recognizes `modify` and passes the remaining arguments to `ModifyCommand`. |
-| `ModifyCommand` | Validates the name/size arguments, locates the recipe, handles an unchanged size and reports success or errors. |
-| `RecipeList` | Finds the first recipe whose full title matches, ignoring case and surrounding whitespace. |
-| `Recipe` | Calculates and validates every new quantity before applying any changes. |
-| `Ingredient` | Keeps the immutable name and unit separate from the replaceable quantity; formats quantities for output. |
-| `IngredientQuantity` | Stores an exact fraction and returns new, reduced fractions when scaling. This class is package-private and immutable. |
-| `Ui` | Displays the previous and new serving sizes and the updated ingredient list. |
-
-![Class diagram of serving-size modification](diagrams/modify-classes.svg)
-
-*Figure 4. Classes involved in resizing. Only relevant members and relationships are shown;
-`~` indicates package-private access.*
-[PlantUML source](diagrams/modify-classes.puml)
+#### Exact quantity representation
 
 An ingredient's quantity is an `IngredientQuantity`, represented by positive `BigInteger` numerator
 and denominator fields. Decimal input is converted through `BigDecimal` without first rounding the
@@ -313,7 +394,7 @@ and range validation; it is not the source of subsequent scaling calculations.
 
 ![Sequence diagram of a successful serving-size modification](diagrams/modify-serving-size.svg)
 
-*Figure 5. A valid command that changes the serving size. Parsing, unchanged-size handling,
+*A valid command that changes the serving size. Parsing, unchanged-size handling,
 exception paths and the application's subsequent save are described in the text and omitted here.*
 [PlantUML source](diagrams/modify-serving-size.puml)
 
@@ -379,7 +460,7 @@ when a later ingredient fails validation.
 
 ### Recipe filtering: `search`
 
-*Section author:  NATHAN BONG NENG QUAN ([NUS-Nbnq]https://github.com/NUS-Nbnq).* 
+*Section author: NATHAN BONG NENG QUAN ([NUS-Nbnq](https://github.com/NUS-Nbnq)).*
 
 The `search` command selects recipes using one or more filters. Each filter has the form
 `f/{field}/{keyword}`, where `field` is `name`, `ingredient`, or `stock`. For example,
@@ -396,7 +477,7 @@ testable.
 
 ![Class diagram of the search filter implementations](diagrams/search-filter-classes.svg)
 
-*Figure 5. The filter hierarchy and the model objects read by each implementation.*
+*The filter hierarchy and the model objects read by each implementation.*
 [PlantUML source](diagrams/search-filter-classes.puml)
 
 | Component | Responsibility |
@@ -430,7 +511,7 @@ also performs all syntax validation before `SearchCommand` starts scanning recip
 
 ![Class diagram of FilterFactory and its created filters](diagrams/filter-factory-classes.svg)
 
-*Figure 6. `FilterFactory` validates filter syntax and selects the concrete filter class.*
+*`FilterFactory` validates filter syntax and selects the concrete filter class.*
 [PlantUML source](diagrams/filter-factory-classes.puml)
 
 The factory first rejects an empty argument string. It splits the remaining input on whitespace,
@@ -489,30 +570,8 @@ soybeans and sesame. These categories define the scope of the feature, not an ex
 food allergies. The [User Guide](UserGuide.md#built-in-allergen-warnings) contains the complete keyword
 list, command examples and user-visible limitations.
 
-#### Responsibilities and data model
-
-The feature separates matching from console formatting so the same rules can be reused and tested
-without running the application loop.
-
-| Component | Responsibility |
-| --- | --- |
-| `Allergen` | Defines each category's display name and immutable list of English keywords; matches a name against those keywords. |
-| `AllergenChecker` | Examines the supplied `Ingredient` objects and returns the distinct matching categories. It has no recipe-specific state. |
-| `Ingredient` | Supplies the name separately from its quantity and unit, so quantities and measurement units are not scanned. |
-| `Ui` | Formats the warning consistently for a newly added recipe and a retrieved recipe. |
-| `AddCommand` | Calls `Ui.showAllergenWarnings(recipe)` only after input validation and successful insertion. |
-| `RetrieveCommand` | Uses the existing `Ui.showRecipe` overloads; both eventually display one `Recipe` and its warning. |
-
-![Class diagram of the allergen-checking components](diagrams/allergen-classes.svg)
-
-*Figure 6. Dependencies relevant to allergen checking. Unrelated members and classes are omitted.*
-[PlantUML source](diagrams/allergen-classes.puml)
-
-No allergen flag is stored in `Recipe` or in the save file. `AllergenChecker.findAllergens` derives a
-new result from the current ingredient names each time it is called. Consequently, recipes loaded by
-`Storage` receive the same check as newly created recipes, and scaling quantities does not invalidate
-the result. Existing files remain compatible because the feature adds no persistent fields. The
-returned set is unmodifiable; callers cannot mutate a result or use it to change a recipe.
+See [Allergen checking design](#allergen-checking-design) for the class responsibilities
+and derived-result model. The matching and runtime interaction are described below.
 
 #### Matching rules
 
@@ -537,7 +596,7 @@ little benefit for this version.
 
 ![Sequence diagram of retrieving a recipe and checking possible allergens](diagrams/allergen-retrieve.svg)
 
-*Figure 7. The allergen check triggered by successful retrieval by full name. Parsing, private
+*The allergen check triggered by successful retrieval by full name. Parsing, private
 formatting helpers and ingredient getters are omitted to keep attention on the allergen check.*
 [PlantUML source](diagrams/allergen-retrieve.puml)
 
@@ -587,9 +646,9 @@ literal name matches, not findings about the food's composition. No output shoul
 unmatched recipe as safe or allergen-free. Only ingredient names are checked; notes and preparation
 steps may mention food that the checker does not see.
 
-The planned v2.0b substitution feature is outside this implementation. A future change must define
-and test its own replacement rules; the absence of a keyword match cannot establish that a proposed
-replacement is safe.
+The separate [substitution command](#ingredient-alternatives-substitute) uses complete-name rules
+rather than reusing these broad warning matches. Neither a warning result nor a substitution
+suggestion establishes whether an ingredient is safe.
 
 #### Automated verification and diagram maintenance
 
@@ -608,6 +667,64 @@ JUnit suite and Checkstyle. Diagrams are committed as SVG so GitHub and the publ
 them without a PlantUML plugin. After changing a `.puml` source, regenerate its SVG with
 `java -jar /path/to/plantuml.jar -tsvg docs/diagrams/*.puml` and inspect the rendered result.
 
+### Ingredient alternatives: `substitute`
+
+*Section author: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)).*
+
+`substitute RECIPE_NAME` displays alternatives for supported ingredient names. For example, a `Cake`
+recipe containing `milk` and `eggs` receives ideas for rice drink and mashed banana, with cooking
+limitations. The [User Guide](UserGuide.md#viewing-ingredient-alternatives-substitute) lists every supported
+name and the exact output. The [design section](#ingredient-substitution-design) explains class ownership.
+
+#### Lookup and command flow
+
+![Sequence diagram of substitution advice](diagrams/substitution-sequence.svg)
+
+*Successful substitution lookup. Both displayed self-calls have nested activation bars; appending a
+suggestion is pseudocode for constructing a value and adding it to the local list.*
+[PlantUML source](diagrams/substitution-sequence.puml)
+
+1. `Parser` creates `SubstituteCommand` with the remaining input. An empty trimmed title produces a
+   usage error; all other values are full titles, including numeric strings.
+2. `RecipeList.getByName` resolves the title ignoring case and surrounding whitespace. A missing or
+   partial title throws before any advice is displayed.
+3. `SubstitutionAdvisor.suggest` visits the ingredients in recipe order. It lowercases each name
+   with `Locale.ROOT`, strips surrounding whitespace, and collapses runs of whitespace or hyphens
+   to one space. It then compares the complete result with each rule's explicit aliases.
+4. For a matching rule, it creates one `SubstitutionSuggestion` with the original 1-based ingredient
+   number and the rule's alternative and usage note. Unsupported names are skipped; separate
+   ingredient entries retain separate suggestions, even if their names repeat.
+5. The advisor returns `List.copyOf(suggestions)`. `Ui` displays the result, handles an empty list,
+   and states that the recipe and quantities have not changed.
+
+This permits `WHOLE WHEAT-FLOUR` to match `whole wheat flour`, while preventing `coconut milk` from
+using the `milk` rule and `peanut butter` from using the `butter` rule. An empty result only means that
+the catalogue has no entry. It must never be displayed as an allergy-safety result.
+
+#### Alternatives, boundaries and verification
+
+Complete-name matching was chosen over substring/category matching to avoid applying a cooking
+substitution to a different compound ingredient. The cost is intentionally limited coverage; the
+command supports six rule groups, not all nine warning categories. Maintaining an explicit catalogue
+makes each alias and caveat reviewable without adding a remote service or runtime library.
+
+Automatic swaps were not selected because the right replacement amount depends on the ingredient's
+role, recipe and product. The command does not inspect cooking steps, account for a user's allergies,
+or calculate nutrition. Every displayed alternative includes its context, and the UI reminds users
+to check labels, other allergens and cross-contact. Supporting automatic swaps later would require
+explicit conversion rules, validation, atomic recipe updates and persistence tests.
+
+For I ingredients and R fixed catalogue rules, matching makes at most I x R alias-list checks, in
+addition to name normalization. R is six; no indexing structure is needed. At most I result values
+are allocated. Assertions guard non-null internal inputs, and `FINE` logging records result counts.
+
+* `SubstitutionAdvisorTest` covers catalogue entries, aliases, whole-name boundaries, locale independence,
+  original numbering, repeated ingredients, immutable results and exact-quantity preservation.
+* `SubstituteCommandTest` checks parser dispatch, title selection, numeric titles, invalid input and
+  preservation of all recipe fields.
+* `SubstitutionWorkflowTest` runs the real CLI in isolated directories, including save/restart,
+  unchanged saved recipe contents, later resizing, no-match output and continued use after errors.
+
 ### Stock management: `stock`
 
 *Section author: Jiang Siyu ([irisiyuj](https://github.com/irisiyuj))*
@@ -619,15 +736,15 @@ The feature separates the inventory management from command parsing, allowing th
 
 | Component | Responsibility                                                                                                                                          |
 | --- |---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `StockList` | Holds an `ArrayList` of `Ingredient` objects. Provides the logic to add, merge, and remove items. It normalizes names to match singular and plural forms. |
-| `StockCommand` | Parses the `action` (add, remove, list) and `data`. It handles command-level validation and passes structured `Ingredient` objects to `StockList`.      |
+| `StockList` | Holds an `ArrayList` of `StockItem` objects. Provides the logic to add, merge, and remove items. It normalizes names to match singular and plural forms. |
+| `StockCommand` | Parses the `action` (add, remove, list) and `data`. It handles command-level validation and passes `StockItem` wrappers to `StockList`.      |
 | `StockItem` | Wraps an `Ingredient` and an optional `LocalDate` expiry date. It provides methods to check if an item is expired or expiring soon.                     |
 | `Ingredient` | Reused from the recipe module. It supplies the quantity, unit and name for the stock operations.                                                        |
 | `Parser` | Recognizes the `stock` keyword and instantiates the `StockCommand` with the shared `StockList`.                                                         |
 
 ![Object diagram of the stock components](diagrams/stock-object.svg)
 
-*Figure 8. The in-memory state of `StockList` after adding "3 eggs" and "200g chicken". Unrelated members are omitted.*
+*The in-memory state of `StockList` after adding "3 eggs" and "200g chicken". Unrelated members are omitted.*
 
 Unlike `Recipe`, the `StockList` does not maintain serving sizes. It relies on an `ArrayList` to preserve insertion order. The `Ingredient` objects stored within `StockItem` are mutable only in their quantity; their name and unit remain final.
 
@@ -635,19 +752,19 @@ Unlike `Recipe`, the `StockList` does not maintain serving sizes. It relies on a
 #### Implementation details
 
 ![Sequence diagram of a successful stock remove command](diagrams/stock-remove.svg)
-*Figure 9. A valid `stock remove` command that successfully subtracts quantities. Exception paths and the application's subsequent save are omitted.*
+*A valid `stock remove` command that successfully subtracts quantities. Exception paths and the application's subsequent save are omitted.*
 
 1. `StockCommand.execute` splits the arguments into an `action` and the remaining `data`. For `add`, it checks for the ` by/` prefix to extract and parse the expiry date using `LocalDate.parse()`.
 2. If the date format is invalid, a `DateTimeParseException` is caught and rethrown as a user-facing `WhatsCookingException`.
 3. For `add`, `StockList` attempts to find an existing `StockItem` with matching name, unit, and expiry date. If found, quantities are summed. If the expiry dates differ, the new item is appended as a separate entry.
 4. For `remove`, the `StockList` collects all matching items and **sorts them by expiry date (earliest first, null dates last)**. It then subtracts the requested quantity from the earliest-expiring items first.
-5. If a removal empties an item's quantity, it is deleted. The command logs the operation and calls `Ui` to display the updated list with `[EXPIRED]` or `[EXPIRING SOON]` tags.
+5. Fully consumed batches are deleted; a partial batch has its quantity updated. After a successful removal, `Ui.showMessage` confirms the removed input. Expiry tags are displayed by a separate `stock list` command.
 
 #### Expiry tracking and floating-point safety
 
 The `StockItem` uses `LocalDate.now()` to determine its state. An item is flagged as `[EXPIRED]` if its date is before today, and `[EXPIRING SOON]` if it expires within the next 3 days. This prevents food waste by visually alerting the user.
 
-When removing items, the implementation calculates `newQuantity = item.getQuantity() - toRemove.getQuantity()`. Because Java uses floating-point arithmetic for `double`, an exact subtraction like `5.0 - 5.0` might theoretically result in `0.000000001`. To prevent leaving ghost items, the code checks `if (newQuantity <= 0.0001)` before deleting. Otherwise, it updates via `setQuantity`.
+Before removing any batch, the implementation sums all matching quantities and checks the request against that total. A `0.0001` tolerance is applied to the availability check and batch-consumption comparisons. This handles representation differences such as `0.1 + 0.2` versus `0.3`. Whole batches are removed first; a partially consumed batch is updated with `setQuantity`, or removed if the remainder is at most `0.0001`. Insufficient stock throws before any mutation. The tolerance is absolute and expressed in the supplied unit; the implementation uses `double`, not exact arithmetic.
 
 
 #### Alternatives and limitations
@@ -658,13 +775,13 @@ A limitation of this implementation is the lack of automatic unit conversion. If
 
 #### Defensive programming and integration
 
-Assertions guard internal assumptions: `StockList` asserts that the incoming `Ingredient` is not null. User input errors are handled separately via `WhatsCookingException` and displayed by the `Ui`. The `StockList` is instantiated once in `WhatsCooking` and passed via the `Parser` to avoid static state, keeping the class testable. Data persistence handles `LocalDate` by serializing it to a string (or "NONE") during save/load.
+Assertions guard internal assumptions: `StockList` asserts that the incoming `StockItem` is not null. User input errors are handled separately via `WhatsCookingException` and displayed by the `Ui`. The `StockList` is instantiated once in `WhatsCooking` and passed via the `Parser` to avoid static state, keeping the class testable. Stock and expiry dates are session-only: `Storage` saves recipes, and `WhatsCooking` creates a new empty `StockList` on every launch.
 
 #### Automated verification
 
 * `StockListTest` covers successful additions, merging identical items, case-insensitivity, plural matching, exact removals, partial removals, and exceptions for insufficient stock.
 * `StockCommandTest` verifies the command parsing, missing arguments, invalid ingredient formats, and correct delegation to `StockList`.
-* Manual testing instructions for the stock feature are included in the section [Instructions for manual testing](#instructions-for-manual-testing).
+* Manual testing instructions for the stock feature are included in the section [Instructions for manual testing](#appendix-e-instructions-for-manual-testing).
 
 ### Recipe creation and editing: `add` and `edit`
 
@@ -685,7 +802,7 @@ individual values (title, type, serving size, ingredients, steps and note) live 
 
 ![Class diagram of recipe creation and editing](diagrams/recipe-input-classes.svg)
 
-*Figure 10. Classes involved in `add` and `edit`. Only relevant members and relationships are shown;
+*Classes involved in `add` and `edit`. Only relevant members and relationships are shown;
 `~` indicates package-private access and underlined methods are static.*
 [PlantUML source](diagrams/recipe-input-classes.puml)
 
@@ -695,7 +812,7 @@ The format is `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENTS] [st/STEP]... [n/NO
 
 ![Sequence diagram of a successful add command](diagrams/add-recipe.svg)
 
-*Figure 11. A valid `add` command with a new title. Parsing by `Parser`, exception paths and the
+*A valid `add` command with a new title. Parsing by `Parser`, exception paths and the
 application's subsequent save are described in the text and omitted here.*
 [PlantUML source](diagrams/add-recipe.puml)
 
@@ -717,10 +834,11 @@ The format is `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`. Unlik
 given in any order. `EditCommand` records where each prefix starts, sorts those positions, and takes each
 value as the text up to the next prefix or the end of the line.
 
-![Activity diagram of the checks made by the edit command](diagrams/edit-recipe-activity.svg)
+![Sequence diagram of a successful title edit](diagrams/edit-recipe.svg)
 
-*Figure 12. The checks `edit` makes, in order. Every check finishes before any value is changed.*
-[PlantUML source](diagrams/edit-recipe-activity.puml)
+*A successful title edit. Type/note lookup and error paths are omitted; every validation finishes
+before a setter changes the recipe. Private self-calls have nested activation bars.*
+[PlantUML source](diagrams/edit-recipe.puml)
 
 1. The recipe number is parsed as a positive whole number and resolved with `RecipeList.get`.
 2. The values for `title/`, `type/` and `n/` are found. A missing prefix leaves that field unchanged.
@@ -747,7 +865,9 @@ The prefix `type/` is used instead of `t/` because `t/` is reserved for a planne
   as a duplicate of `egg taco`. `edit` cannot yet change ingredients, steps or remove a type; these are
   planned for v2.0b.
 
-## Product scope
+<a id="product-scope"></a>
+
+## Appendix A: Product Scope
 ### Target user profile
 
 Home cooks who prefer a command-line interface for storing, finding and adjusting their recipes, as well as managing the ingredients they currently have at home.
@@ -755,9 +875,12 @@ Home cooks who prefer a command-line interface for storing, finding and adjustin
 ### Value proposition
 
 Keep recipe details in a local collection, find them quickly, resize quantities for a different
-number of servings, and surface possible allergens named in the recorded ingredients, , and keep track of available ingredients to know what can be cooked right now.
+number of servings, and inspect possible allergens and ingredient alternatives. Track home stock
+within a session and search for recipes whose recorded quantities it can cover.
 
-## User Stories
+<a id="user-stories"></a>
+
+## Appendix B: User Stories
 
 |Version| As a ... | I want to ... | So that I can ...|
 |----|---------|---------------|------------------|
@@ -771,21 +894,38 @@ number of servings, and surface possible allergens named in the recorded ingredi
 |v2.0|frequent user|be stopped from adding a recipe whose title I already used|avoid keeping two different versions of the same dish|
 |v2.0|host|record how many people a recipe serves when I add it|scale it correctly with `modify` later|
 |v2.0|frequent cook|edit a recipe's title, type or note|keep my recipes up to date without deleting and re-adding them|
+|v2.0|home cook|view cooking alternatives for supported ingredients without changing my recipe|compare options before deciding how to adapt a dish|
+|v2.0|home cook|filter recipes by title and ingredient keywords|find dishes from the details I remember|
+|v2.0|home cook|filter recipes by available stock for a chosen serving size|compare dishes that my recorded quantities can cover|
 
-## Non-Functional Requirements
+<a id="non-functional-requirements"></a>
 
-* An invalid resize must leave the original recipe unchanged; successful resizing must preserve its other details.
-* Within a running session, quantity display rounding must not affect later resizing calculations.
-* Allergen checking runs offline, without third-party runtime dependencies or a remote database.
-* Detection must leave the recipe and its quantities unchanged and use a stable display order.
-* The feature must work with the existing plain-text save format and Java 25 application.
-* A rejected `add` or `edit` must leave the recipe list exactly as it was before the command.
-* Recipe titles must stay unique (ignoring case), including for recipes loaded from a previous session.
-* A missing, unreadable or corrupted data file must not stop the application from starting.
-* The data file must be plain text that a user can read and copy to another computer.
-* Log output must never appear in the console alongside the application's output.
+## Appendix C: Non-Functional Requirements
 
-## Glossary
+* **Portability:** The packaged JAR must run in a terminal on Windows, macOS and Linux with only
+  Java 25 installed; Gradle and an IDE must not be required by end users.
+* **Offline operation:** All documented commands, including allergen checks and substitution advice,
+  must work without an internet connection, user account or remote database.
+* **Update integrity:** A rejected `add`, `edit` or `modify` must leave the recipe collection unchanged.
+  A successful resize must preserve the title, type, ingredient names/units, steps and note. Recipe
+  titles must remain unique ignoring case, including when loading saved recipes.
+* **Numerical accuracy:** Within one session, display rounding must not affect later resizing;
+  scaling an ingredient from three servings to one and back to three must recover its exact quantity.
+  Exact recovery across saving/restarting is outside this guarantee because storage uses decimals.
+* **Read-only advice:** Allergen checking and substitution lookup must preserve recipe fields and
+  quantities, produce a stable result order for the same input, and avoid claims of allergy safety.
+* **Startup resilience:** A missing data file must start an empty collection. An unreadable or invalid
+  file must produce an explanatory error and leave the application able to accept commands.
+  Recovery of damaged contents is outside scope; a later save can replace the file.
+* **Data portability and compatibility:** Recipe data must remain readable UTF-8 plain text that can
+  be copied between supported operating systems. Warnings and substitution advice must require no
+  extra saved fields or migration of existing valid files. Stock remains session-only.
+* **Diagnostic separation:** Developer log records must go to a file, never into the CLI's user
+  output. If logging cannot create its file, the application must continue without console logging.
+
+<a id="glossary"></a>
+
+## Appendix D: Glossary
 
 * *Serving size* - The number of people for whom the recorded ingredient quantities are intended.
 * *Exact quantity* - A quantity represented internally as a fraction rather than rounded display text.
@@ -799,11 +939,14 @@ number of servings, and surface possible allergens named in the recorded ingredi
 * *Command word* - The first word of a line of input, such as `add` or `view`, which selects the command to run.
 * *Data file* - The plain-text file `data/whatscooking.txt`, which holds the saved recipes.
 
-## Instructions for manual testing
+<a id="instructions-for-manual-testing"></a>
+
+## Appendix E: Instructions for Manual Testing
 
 Run a built JAR in a separate test folder so these examples do not affect your personal recipe file.
 Build it with `./gradlew shadowJar` (Windows: `.\gradlew.bat shadowJar`), copy
 `build/libs/whatscooking.jar` into that folder, and launch `java -ea -jar whatscooking.jar`.
+Use a fresh folder for each subsection; when a step says to restart, reuse that subsection's folder.
 
 ### Serving-size modification
 
@@ -834,6 +977,26 @@ running between the fraction round-trip steps so this checks the in-memory calcu
 | `add Empty`, then `retrieve Empty` | Empty ingredient list displays normally with no warning. |
 | `add Drink i/1 cup coconut milk` | Literal keyword matching warns about milk; it cannot interpret substitutes. |
 
+### Substitution advice and stock-based search
+
+Start a separate session in an empty test folder. These checks emphasize integration and preserved
+state; the UG contains the complete syntax and catalogue.
+
+| Action | Expected observation |
+| --- | --- |
+| `add Cake, dessert s/2 i/1 cup milk, 2 eggs st/Bake` | Adds a two-serving recipe. |
+| `substitute cAkE` | Shows rice drink for ingredient 1 and mashed banana for ingredient 2, including context and cautions. |
+| `retrieve Cake` | Still contains `1 cup milk` and `2 eggs`; no ingredient has been swapped. |
+| `substitute`, then `substitute Missing` | Usage error, then recipe-not-found error; the app continues. |
+| `add Drink i/1 cup coconut milk`, then `substitute Drink` | No built-in suggestion, with the suitability caution. |
+| `search f/ingredient/egg` | Finds Cake by a substring of its ingredient name. |
+| `stock add 2 cup milk`, then `stock add 4 eggs` | Records enough stock for four servings of Cake. |
+| `search f/name/cak f/stock/4` | Finds Cake; its saved serving size stays 2. |
+| `search f/stock/0` | Reports that stock serving size must be a positive integer. |
+| `bye`, restart in the same folder, then `substitute Cake` | Suggestions still work on loaded recipes. |
+| `stock list` after restart | Stock is empty because inventory is session-only. |
+| `exit` | Shows the goodbye message and exits, like `bye`. |
+
 ### Viewing and saving recipes
 
 Run these actions in order in an empty test folder, so no data file exists yet.
@@ -851,14 +1014,14 @@ Run these actions in order in an empty test folder, so no data file exists yet.
 
 ### Retrieve and Delete
 
-Run these actions in order.
+Run these actions in order in a fresh test folder, so `Retrieve Test` has index 1.
 
 | Action | Expected observation |
 | --- | --- |
 | `add Retrieve Test, main i/1 egg st/Cook` | Recipe added. |
 | `retrieve 1` | Displays the full recipe for `Retrieve Test`. |
 | `retrieve retrieve test` | Displays the same recipe (case-insensitive name matching). |
-| `retrieve 99` | Error: Recipe 99 does not exist. |
+| `retrieve 99` | `Error: Recipe 99 does not exist; you have 1 recipe(s).` |
 | `delete 1` | Successfully deletes the recipe. |
 | `retrieve Retrieve Test` | Error: Recipe not found. |
 | `delete apple` | Error: Recipe not found. |
@@ -874,7 +1037,7 @@ Run these actions in order, starting with an empty stock. Keep the application r
 | `stock add 200g chicken` | Stock now has three different items (eggs without date, eggs with date, chicken). |
 | `stock list` | Lists the three items. The eggs without a date show no tag. |
 | `stock remove 4 eggs` | Case and plural matching work; it removes the 2 dated eggs first, then 2 of the undated eggs. |
-| `stock list` | Lists "1.0 eggs" (no date, no tag) and "200g chicken". |
+| `stock list` | Lists `1 eggs` (no date, no tag) and `200 g chicken`. |
 | `stock add 2 eggs by/2020-01-01` | Adds eggs that are already expired. |
 | `stock list` | The newly added eggs will have an `[EXPIRED]` tag at the end. |
 | `stock remove 5 eggs` | Error: Not enough eggs in stock. |

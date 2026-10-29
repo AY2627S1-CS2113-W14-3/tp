@@ -6,6 +6,7 @@ skinparam classAttributeIconSize 0
 skinparam defaultFontName SansSerif
 skinparam defaultFontSize 15
 hide empty members
+hide circle
 top to bottom direction
 
 class WhatsCooking {
@@ -19,7 +20,8 @@ abstract class Command {
   +{abstract} execute(recipes, ui)
   +isExit(): boolean
 }
-class "AddCommand, EditCommand,\nRetrieveCommand, DeleteCommand,\nSearchCommand, ModifyCommand,\nStockCommand, ViewCommand" as Others
+class AddCommand
+class SubstituteCommand
 class ExitCommand {
   +isExit(): boolean
 }
@@ -28,28 +30,20 @@ class Ui {
   +showError(message)
 }
 class RecipeList
-class StockList
 class Storage {
   +load(): RecipeList
   +save(recipes)
 }
-class AppLogger <<utility>> {
-  +{static} getLogger(loggingClass): Logger
-}
-class WhatsCookingException
 
 WhatsCooking ..> Parser : parse input
 WhatsCooking ..> Command : execute
-WhatsCooking --> Ui
-WhatsCooking --> Storage
-WhatsCooking --> RecipeList : recipes
-WhatsCooking --> StockList : stockList
+WhatsCooking ..> Ui : uses
+WhatsCooking ..> Storage : uses
 Parser ..> Command : creates
-Command <|-- Others
+Command <|-- AddCommand
+Command <|-- SubstituteCommand
 Command <|-- ExitCommand
 Command ..> RecipeList : reads/changes
 Command ..> Ui : reports to
 Storage ..> RecipeList : loads/saves
-WhatsCooking ..> WhatsCookingException : catches
-WhatsCooking ..> AppLogger : logs via
 @enduml

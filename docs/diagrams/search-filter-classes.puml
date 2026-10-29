@@ -6,6 +6,7 @@ skinparam classAttributeIconSize 0
 skinparam defaultFontName SansSerif
 skinparam defaultFontSize 15
 hide empty members
+hide circle
 
 abstract class Filter {
   +matches(recipe): boolean
@@ -34,7 +35,12 @@ class Ingredient {
   +getQuantity(): double
 }
 class StockList {
-  +getAll(): List<Ingredient>
+  +getAll(): List<StockItem>
+}
+class StockItem {
+  +getName(): String
+  +getUnit(): String
+  +getQuantity(): double
 }
 
 Filter <|-- NameFilter
@@ -44,5 +50,7 @@ Filter ..> Recipe : matches
 IngredientFilter ..> Ingredient : reads names
 StockFilter --> StockList : checks available stock
 StockFilter ..> Ingredient : compares name, unit and quantity
+StockList --> "0..*" StockItem : ingredients
+StockFilter ..> StockItem : reads available quantities
 StockFilter ..> Recipe : scales a copy
 @enduml
