@@ -1,0 +1,48 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+
+abstract class Filter {
+  +matches(recipe): boolean
+}
+class NameFilter {
+  -keyword: String
+  +matches(recipe): boolean
+}
+class IngredientFilter {
+  -keyword: String
+  +matches(recipe): boolean
+}
+class StockFilter {
+  -stockList: StockList
+  -targetServingSize: int
+  +matches(recipe): boolean
+}
+class Recipe {
+  +getTitle(): String
+  +getIngredients(): List<Ingredient>
+  +scaleToServingSize(size)
+}
+class Ingredient {
+  +getName(): String
+  +getUnit(): String
+  +getQuantity(): double
+}
+class StockList {
+  +getAll(): List<Ingredient>
+}
+
+Filter <|-- NameFilter
+Filter <|-- IngredientFilter
+Filter <|-- StockFilter
+Filter ..> Recipe : matches
+IngredientFilter ..> Ingredient : reads names
+StockFilter --> StockList : checks available stock
+StockFilter ..> Ingredient : compares name, unit and quantity
+StockFilter ..> Recipe : scales a copy
+@enduml

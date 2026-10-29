@@ -1,0 +1,32 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+
+class FilterFactory <<utility>> {
+  {static} +createFilters(arguments, stockList): ArrayList<Filter>
+  -{static} createFilter(filterText, stockList): Filter
+  -{static} parseServingSize(text): int
+  -{static} invalidFormat(): WhatsCookingException
+}
+abstract class Filter
+class NameFilter
+class IngredientFilter
+class StockFilter
+class StockList
+class WhatsCookingException
+
+FilterFactory ..> Filter : returns list of
+FilterFactory ..> NameFilter : creates for name
+FilterFactory ..> IngredientFilter : creates for ingredient
+FilterFactory ..> StockFilter : creates for stock
+FilterFactory ..> StockList : injects into StockFilter
+FilterFactory ..> WhatsCookingException : reports invalid syntax
+NameFilter --|> Filter
+IngredientFilter --|> Filter
+StockFilter --|> Filter
+@enduml

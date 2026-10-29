@@ -6,11 +6,11 @@ skinparam defaultFontSize 15
 skinparam sequenceMessageAlign center
 hide footbox
 
-participant ":WhatsCooking" as App
+participant "<<class>>\nWhatsCooking" as App
 participant ":RetrieveCommand" as Command
 participant "recipes:RecipeList" as Recipes
 participant ":Ui" as UI
-participant "AllergenChecker" as Checker
+participant "<<class>>\nAllergenChecker" as Checker
 participant "category:Allergen" as Category
 
 App -> Command : execute(recipes, ui)
@@ -22,6 +22,9 @@ deactivate Recipes
 Command -> UI : showRecipe(recipe)
 activate UI
 UI -> UI : print recipe details
+activate UI
+UI --> UI
+deactivate UI
 UI -> Checker : findAllergens(recipe.getIngredients())
 activate Checker
 loop for each ingredient and category
@@ -31,12 +34,18 @@ loop for each ingredient and category
   deactivate Category
   opt matched
     Checker -> Checker : add category to result set
+    activate Checker
+    Checker --> Checker
+    deactivate Checker
   end
 end
 Checker --> UI : unmodifiable set of matches
 deactivate Checker
 opt at least one category matched
   UI -> UI : print possible-allergen warning
+  activate UI
+  UI --> UI
+  deactivate UI
 end
 UI --> Command
 deactivate UI

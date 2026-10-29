@@ -8,9 +8,11 @@ import java.util.StringJoiner;
 import seedu.whatscooking.WhatsCookingException;
 import seedu.whatscooking.allergen.Allergen;
 import seedu.whatscooking.allergen.AllergenChecker;
+import seedu.whatscooking.allergen.SubstitutionSuggestion;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
+import seedu.whatscooking.recipe.StockItem;
 
 /**
  * Handles all console input and output for the application.
@@ -65,6 +67,32 @@ public class Ui {
     public void showMessage(String message) {
         showLine();
         System.out.println(message);
+        showLine();
+    }
+
+    /**
+     * Displays cooking ideas and their limits without suggesting an automatic quantity conversion.
+     *
+     * @param recipe the unchanged recipe whose ingredients were examined
+     * @param suggestions the supported alternatives, in ingredient order
+     */
+    public void showSubstitutionSuggestions(Recipe recipe, List<SubstitutionSuggestion> suggestions) {
+        assert recipe != null : "A recipe must be selected before showing suggestions";
+        assert suggestions != null : "The advisor must return a list, even when there are no matches";
+        showLine();
+        System.out.println("Substitution ideas for " + recipe.getTitle() + ":");
+        if (suggestions.isEmpty()) {
+            System.out.println("No built-in suggestions for the recorded ingredient names.");
+        } else {
+            for (SubstitutionSuggestion suggestion : suggestions) {
+                System.out.println("  " + suggestion.ingredientNumber() + ". " + suggestion.ingredientName()
+                        + " -> " + suggestion.replacement());
+                System.out.println("     " + suggestion.usageNote());
+            }
+        }
+        System.out.println("Check all allergies, product labels and cross-contact; "
+                + "alternatives may contain allergens.");
+        System.out.println("Use a suitable recipe for amounts. Your recipe and quantities have not been changed.");
         showLine();
     }
 
@@ -196,14 +224,21 @@ public class Ui {
      *
      * @param stock the list of ingredients to display
      */
-    public void showStockList(List<Ingredient> stock) {
+    public void showStockList(List<StockItem> stock) {
         showLine();
         if (stock.isEmpty()) {
             System.out.println("Your home stock is empty.");
         } else {
             System.out.println("Current Home Stock:");
-            for (Ingredient item : stock) {
-                System.out.println("- " + item.getDisplayDescription());
+            for (StockItem item : stock) {
+                String tag = "";
+                if (item.isExpired()) {
+                    tag = " [EXPIRED]";
+                } else if (item.isExpiringSoon()) {
+                    tag = " [EXPIRING SOON]";
+                }
+                String dateStr = item.getExpiryDate() == null ? "" : " (Expires: " + item.getExpiryDate() + ")";
+                System.out.println("- " + item.getIngredient().getDisplayDescription() + dateStr + tag);
             }
         }
         showLine();
