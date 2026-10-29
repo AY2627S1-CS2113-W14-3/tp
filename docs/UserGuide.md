@@ -231,8 +231,69 @@ cross-contact or ingredients named in other languages. It also cannot understand
 negation: `coconut milk`, `peanut butter` and `egg-free mix` can produce extra warnings because their
 names contain listed keywords. Check the actual ingredient labels and suitability yourself.
 
-This version does not suggest or swap replacement ingredients. Warnings are recalculated from the
-current ingredient names, including after saving and restarting the application.
+Warnings are recalculated from the current ingredient names, including after saving and restarting
+the application. Use `substitute` below to view cooking alternatives for supported ingredients.
+
+### Viewing ingredient alternatives: `substitute`
+
+Shows possible alternatives for supported ingredients in an existing recipe.
+
+Format: `substitute RECIPE_NAME`
+
+* Use the **full recipe title**, ignoring case and surrounding whitespace. This command does not
+  accept a recipe index; a numeric value is interpreted as a literal recipe title.
+* Suggestions refer to the ingredient numbers shown by `retrieve`, in the same order. Unsupported
+  ingredients are omitted; repeated ingredients retain their own numbers.
+* Matching uses the **complete ingredient name**, ignoring case, repeated whitespace and hyphens.
+  For example, `WHOLE WHEAT-FLOUR` matches `whole wheat flour`. It does not guess from individual
+  words: `coconut milk`, `egg-free mix`, `salted butter` and `peanut butter sauce` have no entry.
+* The command does not swap ingredients or calculate replacement amounts. Your original recipe,
+  serving size and stock stay unchanged. Check a suitable recipe before using an alternative.
+
+The complete built-in catalogue is:
+
+| Recognised ingredient names | Alternative to consider | Context |
+| --- | --- | --- |
+| `milk`, `cow milk`, `cow's milk` | Rice drink | Cooking or baking; flavour and nutrition differ. |
+| `butter` | Milk-free margarine | Spreading or baking; check the product's instructions. |
+| `egg`, `eggs` | Mashed banana | Some baked goods only; adds flavour and cannot replace eggs in omelettes or meringues. |
+| `peanut butter` | Sunflower seed butter | Spreads or suitable baking recipes; check seed allergies. |
+| `almond butter`, `cashew butter` | Sunflower seed butter | Spreads or suitable baking recipes; check seed allergies. |
+| `wheat flour`, `whole wheat flour` | Wheat-free flour blend | Follow a tested recipe and the blend's instructions. |
+
+These cooking ideas draw on [FARE's substitution guide](https://www.foodallergy.org/resources/substitutions-common-allergens-pdf)
+and the [Kids with Food Allergies substitution guides](https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/).
+The application's catalogue is deliberately narrower than its nine-category warning dictionary.
+There are no built-in suggestions for fish, shellfish, soy or sesame, or for other unlisted names.
+
+**An alternative can contain other allergens.** Check all relevant allergies, product labels and
+cross-contact. A suggestion, or the absence of one, does not establish that any food is safe.
+The command cannot evaluate a recipe's cooking method, an allergy profile or nutritional needs.
+
+Example:
+
+```text
+add Cake, dessert s/2 i/1 cup milk, 2 eggs st/Bake
+substitute Cake
+```
+
+Expected output:
+
+```text
+____________________________________________________________
+Substitution ideas for Cake:
+  1. milk -> rice drink
+     For cooking or baking; flavour and nutrition differ from cow's milk.
+  2. eggs -> mashed banana
+     For some baked goods only; adds banana flavour. Not for omelettes or meringues.
+Check all allergies, product labels and cross-contact; alternatives may contain allergens.
+Use a suitable recipe for amounts. Your recipe and quantities have not been changed.
+____________________________________________________________
+```
+
+For a recipe without supported names, the output says
+`No built-in suggestions for the recorded ingredient names.` and still shows the caution.
+`substitute` without a title reports usage; `substitute Missing` reports `Recipe not found: Missing`.
 
 ### Searching for recipes: `search`
 Searches recipes using one or more filters for the recipe name and/or its ingredients.
@@ -288,7 +349,9 @@ Format: `modify RECIPE_NAME s/NEW_SERVING_SIZE`
 * Scaled quantities with an infinite recurring decimal expansion are rounded to at most two decimal places for display.
   For example, `1 ÷ 3` is displayed as `0.33`.
 * Rounding affects only the displayed values. The application stores exact ingredient quantities internally,
-  so rounding for display does not affect subsequent calculations.
+  so rounding for display does not affect subsequent calculations **within the current session**.
+  Saving and restarting stores/reloads decimal approximations, so exact fraction round trips are not
+  guaranteed across restarts.
 * If the new serving size is the same as the current serving size, no changes are made.
 
 Examples:
@@ -360,5 +423,6 @@ The next time you start the app, your recipes are loaded back from that file aut
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
+* View ingredient alternatives `substitute RECIPE_NAME`
 * Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
 * Manage home stock `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
