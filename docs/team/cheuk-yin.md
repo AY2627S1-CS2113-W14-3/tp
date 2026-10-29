@@ -48,7 +48,9 @@ allergens and keep track of the ingredients they have at home.
 
 * **Documentation**:
     * User Guide:
-        * Wrote the section "Saving the data".
+        * Wrote the sections "Quick Start", "Viewing all recipes: `view`", "Exiting the program: `bye`" and
+          "Saving the data", and the FAQ entries on transferring data and the log file.
+        * Added `bye` to the Command Summary.
     * Developer Guide:
         * Wrote the Design sections "Architecture" and "Storage design", and the Implementation sections
           "Command execution: main loop and error handling", "Recipe persistence: saving and loading" and
