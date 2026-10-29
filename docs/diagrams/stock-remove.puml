@@ -1,20 +1,24 @@
 @startuml
 
 box "Logic" #F5F5F5
-participant "Parser" as Parser
-participant "StockCommand" as StockCmd
-participant "Ui" as Ui
+participant ":WhatsCooking" as Main
+participant ":Parser" as Parser
+participant ":StockCommand" as StockCmd
+participant ":Ui" as Ui
 end box
 
 box "Model" #F5F5F5
-participant "StockList" as Stock
-participant "StockItem" as Item
-participant "Ingredient" as Ing
+participant ":StockList" as Stock
+participant ":StockItem" as Item
+participant ":Ingredient" as Ing
 end box
 
 User -> Ui : "stock remove 2 eggs"
-Ui -> Parser : parse("stock remove 2 eggs", stockList)
+Ui -> Main : "stock remove 2 eggs"
+Main -> Parser : parse("stock remove 2 eggs", stockList)
 Parser -> StockCmd : new StockCommand(...)
+Main -> StockCmd : execute(recipes, ui)
+
 StockCmd -> Ing : new Ingredient("2 eggs")
 Ing --> StockCmd : ingredient
 StockCmd -> Item : new StockItem(ingredient, null)
@@ -28,11 +32,10 @@ Stock -> Stock : sort by expiry date (earliest first)
 alt total quantity is enough
     Stock -> Item : setQuantity(new quantity)
     Stock --> StockCmd : success
+    StockCmd -> Ui : showMessage("Removed...")
 else insufficient quantity
     Stock --> StockCmd : throw WhatsCookingException
 end
 deactivate Stock
-
-StockCmd -> Ui : showMessage("Removed...")
 
 @enduml
