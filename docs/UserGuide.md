@@ -6,10 +6,21 @@
 
 ## Quick Start
 
-{Give steps to get started quickly}
+1. Ensure that you have Java 25 or above installed. You can check by running `java -version` in a terminal.
+1. Download the latest `whatscooking.jar` from the [releases page](https://github.com/AY2627S1-CS2113-W14-3/tp/releases).
+1. Copy the file into an empty folder. Your recipes will be saved in this folder (see [Saving the data](#saving-the-data)).
+1. Open a terminal in that folder and run `java -jar whatscooking.jar`. A welcome message appears:
 
-1. Ensure that you have Java 25 or above installed.
-1. Down the latest version of `Duke` from [here](http://link.to/duke).
+   ```text
+   ____________________________________________________________
+   Welcome to WhatsCooking!
+   What recipe shall we manage today?
+   ____________________________________________________________
+   ```
+
+1. Type a command and press Enter. For example, `add egg taco, snack i/3 eggs` adds a recipe, and `view`
+   lists your recipes. See [Features](#features) for every command.
+1. Type `bye` to exit.
 
 ## Features
 
@@ -314,11 +325,15 @@ Examples:
 * `search f/name/Chicken f/ingredient/chicken` finds recipes whose name is `Chicken` and which contain an ingredient named `chicken`.
 
 Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
+
 ### Viewing all recipes: `view`
 
-Lists every recipe added so far, showing each one's name, type and serving size. Takes no arguments.
+Lists every recipe in the order it was added, showing each one's number, title, type and serving size.
 
 Format: `view`
+
+* Any text typed after `view` is ignored.
+* The number before each recipe is the `INDEX` used by `retrieve`, `edit` and `delete`.
 
 Example output:
 
@@ -401,17 +416,54 @@ Possible errors:
   Error: Serving size must be a positive integer.
   ```
 
+### Exiting the program: `bye`
+
+Saves your recipes and closes the app.
+
+Format: `bye` or `exit`
+
+Expected output:
+
+```text
+____________________________________________________________
+Bye! Happy cooking.
+____________________________________________________________
+```
+
 ## Saving the data
 
-Your recipes are saved automatically to `data/whatscooking.txt` after every command. There is no need to save manually.
+Your recipes are saved automatically after every command that succeeds. There is no need to save manually.
+They are stored in `data/whatscooking.txt`, inside the folder you run the app from. The `data` folder is
+created the first time the app saves.
 
-The next time you start the app, your recipes are loaded back from that file automatically.
+The next time you start the app from the same folder, your recipes are loaded back automatically.
+
+* Only recipes are saved. Your home stock (`stock`) is **not** saved and is empty each time you start the app.
+* If `data/whatscooking.txt` does not exist yet, the app starts with no recipes. This is normal on first use.
+* If the file's contents are damaged, the app shows the error below and starts with no recipes:
+
+  ```text
+  ____________________________________________________________
+  Error: Could not load saved recipes, starting with an empty list. Data file is corrupted: ...
+  ____________________________________________________________
+  ```
+
+> **Caution:** The data file is plain text, so you can open and read it, but editing it is not recommended.
+> If an edit makes the file unreadable, the app starts with no recipes, and the next successful command
+> replaces the file, removing the recipes it held. Make a backup copy of `data/whatscooking.txt` before
+> editing it.
 
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?
 
-**A**: Copy the `data/whatscooking.txt` file from your old computer to the same location (the folder where the app's jar file is) on your new computer.
+**A**: Copy the `data` folder from the folder you run the app from on your old computer into the folder you
+run the app from on your new computer.
+
+**Q**: What is the `whatscooking.log` file that appears next to the app?
+
+**A**: It records diagnostic information to help developers investigate problems. You do not need to open it,
+and deleting it does not affect your recipes.
 
 ## Command Summary
 
@@ -426,3 +478,4 @@ The next time you start the app, your recipes are loaded back from that file aut
 * View ingredient alternatives `substitute RECIPE_NAME`
 * Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
 * Manage home stock `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
+* Exit the program `bye` or `exit`

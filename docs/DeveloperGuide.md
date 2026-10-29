@@ -29,16 +29,13 @@
 
 ## Design
 
-### Architecture and command execution
+### Architecture
 
 *Section author: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)).*
 
 WhatsCooking is a single-user command-line application. One loop in `WhatsCooking.main` reads a line of
 input, turns it into a `Command`, runs that command against the shared recipe list and saves the result.
 Every feature described in the later sections is a `Command` subclass that plugs into this loop.
-This section describes the loop, how commands are dispatched and how errors and logs are handled.
-
-#### Responsibilities
 
 | Component | Responsibility |
 | --- | --- |
@@ -48,7 +45,7 @@ This section describes the loop, how commands are dispatched and how errors and 
 | `ExitCommand` | Shows the goodbye message and overrides `isExit()` to return `true`. Created for both `bye` and `exit`. |
 | `Ui` | Reads input lines and prints every message, so no other class writes to the console. |
 | `RecipeList` | Holds the recipes for the session; commands read or change it through its methods. |
-| `Storage` | Loads the recipe list at startup and saves it after each successful command (see [Recipe persistence](#recipe-persistence-saving-and-loading)). |
+| `Storage` | Loads the recipe list at startup and saves it after each successful command (see [Storage design](#storage-design)). |
 | `WhatsCookingException` | Carries a user-facing error message from any command back to the main loop. |
 | `AppLogger` | Supplies the loggers used by other classes and sends all log records to a file instead of the console. |
 
@@ -62,89 +59,37 @@ Each command word maps to its own `Command` subclass, rather than one class bran
 `Parser` contains the only `switch`, and each case is a single line, so adding a command means adding a new
 file and one line. This also lets team members develop different commands in separate files without
 editing the same method. `Parser` and `AppLogger` are utility classes with private constructors because
-they keep no state.
+they keep no state. `StockList` is created once in `main` and passed through
+`Parser.parse(fullCommand, stockList)` to `StockCommand` and `SearchCommand`, which need it.
 
-`StockList` is created once in `main` and passed through `Parser.parse(fullCommand, stockList)` to
-`StockCommand` and `SearchCommand`, which need it. The shorter `Parser.parse(fullCommand)` overload creates
-a temporary empty `StockList` and is used by tests that do not involve stock.
+Two concerns are handled once for every command. User-input errors are thrown as `WhatsCookingException`
+and caught only by the main loop, and log records go to a file so they never mix with `Ui` output.
+[Command execution](#command-execution-main-loop-and-error-handling) describes how the loop runs.
 
-#### Main loop
+### Storage design
 
-![Sequence diagram of one iteration of the main loop](diagrams/main-loop.svg)
+*Section author: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)).*
 
-*One iteration of the main loop, for a successful command and for an invalid one. The
-calls each command makes to `RecipeList` and `Ui` are covered in the feature sections.*
-[PlantUML source](diagrams/main-loop.puml)
+Persistence is kept in one class, and only the main loop decides when to save. Commands therefore do not
+need to know that recipes are stored on disk.
 
-1. At startup, `main` creates `Ui`, `Storage` and `StockList`, loads the recipe list through
-   `loadRecipes` and shows the welcome message.
-2. `Ui.readCommand` returns the next line typed by the user.
-3. `Parser.parse` trims the line and splits it at the first space. A blank line and an unknown command
-   word both throw a `WhatsCookingException`.
-4. The loop calls `command.execute(recipes, ui)`. The command validates its own arguments, updates the
-   recipe list if needed and prints its result through `Ui`.
-5. `Storage.save` writes the whole recipe list to the data file.
-6. If `command.isExit()` returns `true`, the loop ends. Otherwise it returns to step 2.
+| Component | Responsibility |
+| --- | --- |
+| `Storage` | Converts the recipe list to and from lines of text, and reads and writes the data file. |
+| `WhatsCooking` | Calls `load()` once at startup and `save(recipes)` after each successful command. Falls back to an empty list if loading fails. |
+| `Recipe`, `Ingredient` | Validate loaded values through the same constructors and setters used by commands. |
+| `WhatsCookingException` | Reports a file that cannot be read, written or parsed. |
 
-If step 3, 4 or 5 throws a `WhatsCookingException`, the loop skips the remaining steps, prints the message
-with `Ui.showError` and reads the next command. `isExit` is only checked after a successful save, so the
-loop ends only when the exit command and the save that follows it both succeed.
+![Class diagram of the storage components](diagrams/storage-classes.svg)
 
-#### Error handling, logging and assertions
+*Classes involved in saving and loading. `Ui` and the members of the model classes are omitted.*
+[PlantUML source](diagrams/storage-classes.puml)
 
-Errors caused by user input are thrown as `WhatsCookingException` and caught in exactly one place, the main
-loop. Commands therefore do not print their own error messages or decide whether to continue; they throw,
-and the loop reports the error and continues. Exceptions from the model, such as an
-`IllegalArgumentException` from `Recipe`, are converted to `WhatsCookingException` by the command that
-receives them, so the message reaches the user instead of ending the program.
-
-By default, Java's logging framework prints records at `INFO` and above to the console, which would mix
-developer diagnostics with the recipe output. On its first use, `AppLogger.getLogger` removes the root
-logger's console handlers and adds a `FileHandler` that appends to `whatscooking.log` in the working
-directory, at `FINE` level and above. If the log file cannot be opened, logging is turned off instead of
-falling back to the console. `configureOnce` is `synchronized` and runs only once, so repeated
-`getLogger` calls do not attach duplicate handlers.
-
-The main loop logs startup and exit at `INFO` and each reported error at `FINE`. `Parser` logs every command
-word at `FINE` and unknown command words at `WARNING`.
-
-Assertions check assumptions that only a programming error could break, for example that
-`Parser.parse` never receives `null` and that `RecipeList.add` never receives a `null` recipe. They do not
-replace input validation. Gradle `run` and tests enable them; when launching the JAR directly, use
-`java -ea -jar whatscooking.jar`.
-
-#### Viewing recipes: `view`
-
-`view` lists every recipe with its number, title, type and serving size, for example
-`1. Egg Taco (snack, serves 2)`. `ViewCommand` takes no arguments and calls `Ui.listRecipes`, which prints
-`No recipes found.` for an empty list. The text after each number comes from `Recipe.toString`. The command
-does not change the recipe list. The numbers it prints are the indexes that `retrieve`, `delete` and `edit`
-accept. The [User Guide](UserGuide.md#viewing-all-recipes-view) describes the command.
-
-#### Alternatives and limitations
-
-* **One subclass per command (current) or one class that branches on the command word.** A single class
-  would be shorter at first, but every new command would edit the same method, and each command's
-  parsing and validation would sit together in one large class.
-* **Log file (current) or `FINE`-only logging to the default console handler.** The default handler hides
-  `FINE` records, so logging only at `FINE` would also keep the console clean. It was rejected because any
-  `WARNING` record would then appear in the user's output.
-* **Limitations.**
-  * If saving fails, for example because the data file is read-only, `bye` prints the goodbye message
-    followed by the save error, and the loop continues instead of exiting.
-  * `Ui.readCommand` expects another line of input. If input ends without `bye` (for example, after
-    Ctrl+D or at the end of a redirected input file), the application stops with a
-    `NoSuchElementException` instead of exiting cleanly.
-  * `view` lists recipes in insertion order and cannot sort or page a long list.
-  * `whatscooking.log` is appended to on every run and never trimmed.
-
-#### Automated verification
-
-* `ParserTest` covers `bye` and `exit`, dispatch to each command subclass, unknown and blank input, and the
-  shared `StockList` being passed to `search`.
-* `ExitCommandTest` checks that only the exit command ends the loop.
-* `ViewCommandTest` checks that viewing leaves both an empty and a populated recipe list unchanged.
-* `RecipeTest` covers the skeleton `Recipe` accessors and defaults.
+`Storage()` uses the default path `data/whatscooking.txt`, relative to the working directory.
+`Storage(String filePath)` accepts any path, so tests can use a temporary file without touching the real
+save file. `Storage` keeps no copy of the recipes: each `save` writes the list it is given, and each `load`
+builds a new `RecipeList`. Saving after every successful command, rather than inside each command, means
+in-place changes such as `modify` scaling a stored recipe are saved without extra code in the command.
 
 ### Serving-size model
 
@@ -224,6 +169,85 @@ still saves recipes after successful commands, including this read-only command.
 
 ## Implementation
 
+### Command execution: main loop and error handling
+
+*Section author: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)).*
+
+This section describes how one line of input is read, run and reported, and how errors, logs and
+assertions are handled for every command. See [Architecture](#architecture) for the components and their
+relationships.
+
+#### Main loop
+
+![Sequence diagram of one iteration of the main loop](diagrams/main-loop.svg)
+
+*One iteration of the main loop, for a successful command and for an invalid one. The
+calls each command makes to `RecipeList` and `Ui` are covered in the feature sections.*
+[PlantUML source](diagrams/main-loop.puml)
+
+1. At startup, `main` creates `Ui`, `Storage` and `StockList`, loads the recipe list through
+   `loadRecipes` and shows the welcome message.
+2. `Ui.readCommand` returns the next line typed by the user.
+3. `Parser.parse` trims the line and splits it at the first space. A blank line and an unknown command
+   word both throw a `WhatsCookingException`.
+4. The loop calls `command.execute(recipes, ui)`. The command validates its own arguments, updates the
+   recipe list if needed and prints its result through `Ui`.
+5. `Storage.save` writes the whole recipe list to the data file.
+6. If `command.isExit()` returns `true`, the loop ends. Otherwise it returns to step 2.
+
+If step 3, 4 or 5 throws a `WhatsCookingException`, the loop skips the remaining steps, prints the message
+with `Ui.showError` and reads the next command. `isExit` is only checked after a successful save, so the
+loop ends only when the exit command and the save that follows it both succeed.
+
+The shorter `Parser.parse(fullCommand)` overload creates a temporary empty `StockList` and is used by
+tests that do not involve stock.
+
+#### Error handling, logging and assertions
+
+Errors caused by user input are thrown as `WhatsCookingException` and caught in exactly one place, the main
+loop. Commands therefore do not print their own error messages or decide whether to continue; they throw,
+and the loop reports the error and continues. Exceptions from the model, such as an
+`IllegalArgumentException` from `Recipe`, are converted to `WhatsCookingException` by the command that
+receives them, so the message reaches the user instead of ending the program.
+
+By default, Java's logging framework prints records at `INFO` and above to the console, which would mix
+developer diagnostics with the recipe output. On its first use, `AppLogger.getLogger` removes the root
+logger's console handlers and adds a `FileHandler` that appends to `whatscooking.log` in the working
+directory, at `FINE` level and above. If the log file cannot be opened, logging is turned off instead of
+falling back to the console. `configureOnce` is `synchronized` and runs only once, so repeated
+`getLogger` calls do not attach duplicate handlers.
+
+The main loop logs startup and exit at `INFO` and each reported error at `FINE`. `Parser` logs every command
+word at `FINE` and unknown command words at `WARNING`.
+
+Assertions check assumptions that only a programming error could break, for example that
+`Parser.parse` never receives `null` and that `RecipeList.add` never receives a `null` recipe. They do not
+replace input validation. Gradle `run` and tests enable them; when launching the JAR directly, use
+`java -ea -jar whatscooking.jar`.
+
+#### Alternatives and limitations
+
+* **One subclass per command (current) or one class that branches on the command word.** A single class
+  would be shorter at first, but every new command would edit the same method, and each command's
+  parsing and validation would sit together in one large class.
+* **Log file (current) or `FINE`-only logging to the default console handler.** The default handler hides
+  `FINE` records, so logging only at `FINE` would also keep the console clean. It was rejected because any
+  `WARNING` record would then appear in the user's output.
+* **Limitations.**
+  * If saving fails, for example because the data file is read-only, `bye` prints the goodbye message
+    followed by the save error, and the loop continues instead of exiting.
+  * `Ui.readCommand` expects another line of input. If input ends without `bye` (for example, after
+    Ctrl+D or at the end of a redirected input file), the application stops with a
+    `NoSuchElementException` instead of exiting cleanly.
+  * `whatscooking.log` is appended to on every run and never trimmed.
+
+#### Automated verification
+
+* `ParserTest` covers `bye` and `exit`, dispatch to each command subclass, unknown and blank input, and the
+  shared `StockList` being passed to `search`.
+* `ExitCommandTest` checks that only the exit command ends the loop.
+* `RecipeTest` covers the skeleton `Recipe` accessors and defaults.
+
 ### Recipe persistence: saving and loading
 
 *Section author: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)).*
@@ -232,17 +256,8 @@ Recipes are saved automatically to `data/whatscooking.txt` after every successfu
 the next time the application starts. The user never runs a save command. The
 [User Guide](UserGuide.md#saving-the-data) describes the user-visible behaviour.
 
-#### Responsibilities
-
-| Component | Responsibility |
-| --- | --- |
-| `Storage` | Converts the recipe list to and from lines of text, and reads and writes the data file. |
-| `WhatsCooking` | Calls `load()` once at startup and `save(recipes)` after each successful command. Falls back to an empty list if loading fails. |
-| `Recipe`, `Ingredient` | Validate loaded values through the same constructors and setters used by commands. |
-
-`Storage()` uses the default path `data/whatscooking.txt`, relative to the working directory.
-`Storage(String filePath)` accepts any path, so tests can use a temporary file without touching the real
-save file.
+See [Storage design](#storage-design) for the class responsibilities. The file format, load and save
+flow and error handling are described below.
 
 #### File format
 
@@ -349,6 +364,23 @@ A damaged file therefore never stops the application from starting.
   recipes, creation of a missing parent folder, and a corrupted file.
 * `PersistenceWorkflowTest` runs the real CLI as two separate processes in one temporary folder and checks
   that a recipe added in the first session is listed by `view` in the second.
+
+### Listing recipes: `view`
+
+*Section author: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)).*
+
+`view` lists every recipe with its number, title, type and serving size, for example
+`1. Egg Taco (snack, serves 2)`. The [User Guide](UserGuide.md#viewing-all-recipes-view) describes the
+command.
+
+`ViewCommand` takes no arguments and calls `Ui.listRecipes`, which prints `No recipes found.` for an empty
+list. The text after each number comes from `Recipe.toString`, so `view` and other recipe summaries use the
+same format. The command does not change the recipe list. The numbers it prints are the indexes that
+`retrieve`, `delete` and `edit` accept.
+
+Recipes are listed in insertion order; `view` cannot sort or page a long list. `ViewCommandTest` checks that
+viewing leaves both an empty and a populated recipe list unchanged, and `PersistenceWorkflowTest` uses
+`view` to check the recipes loaded in a new session.
 
 ### Serving-size modification: `modify`
 
