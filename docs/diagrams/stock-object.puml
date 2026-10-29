@@ -2,7 +2,7 @@
 skinparam objectBackgroundColor White
 
 object "stockList : StockList" as stock {
-  ingredients = [item1, item2]
+  items = [item1, item2]
 }
 
 object "item1 : StockItem" as item1 {
@@ -25,10 +25,10 @@ object "ing2 : Ingredient" as ing2 {
   quantity = 200.0
 }
 
-stock -- item1
-item1 -- ing1 : ingredient
+stock --> item1 : contains
+item1 *--> ing1 : wraps
 
-stock -- item2
-item2 -- ing2 : ingredient
+stock --> item2 : contains
+item2 *--> ing2 : wraps
 
 @enduml

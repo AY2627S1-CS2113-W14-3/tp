@@ -2,39 +2,18 @@
 
 ## Introduction
 
-WhatsCooking is a command-line recipe manager for home cooks who prefer typing. Keep recipes with
-ingredients, steps and notes, search your collection, scale ingredient quantities for different
-serving sizes, check possible allergens and record the ingredients available at home.
-
-This guide describes v2.0. Commands operate on one local collection; no account or internet connection
-is required while using the application.
+{Give a product intro}
 
 ## Quick Start
 
-1. Install **Java 25**. Run `java -version` in a terminal and check that it reports version 25.
-2. Download `whatscooking.jar` from the matching
-   [WhatsCooking release](https://github.com/AY2627S1-CS2113-W14-3/tp/releases).
-3. Put it in a folder you can write to. Open a terminal in that folder and run:
+{Give steps to get started quickly}
 
-   ```text
-   java -ea -jar whatscooking.jar
-   ```
-
-4. Try `add Toast i/2 bread st/Toast`, then `view` and `retrieve Toast`.
-5. Enter `bye` (or `exit`) to leave the application.
-
-Launch from a terminal: double-clicking the JAR may not open a usable command-line window. Use the
-same working folder each time because recipes are stored in `data/whatscooking.txt` relative to that
-folder. A write-protected folder prevents saving. Home stock is kept only for the current session.
-
-Developers can build the JAR with `./gradlew shadowJar` (Windows: `.\gradlew.bat shadowJar`);
-the output is `build/libs/whatscooking.jar`.
+1. Ensure that you have Java 25 or above installed.
+1. Down the latest version of `Duke` from [here](http://link.to/duke).
 
 ## Features
 
-Type one command per line. Command words and prefixes are lowercase. Uppercase words in the formats
-below are placeholders; replace them with your values. Square brackets mark optional parts and are
-not typed literally. `view` lists the recipe numbers used by commands that accept an index.
+{Give detailed description of each feature}
 
 ### Adding a recipe: `add`
 Adds a new recipe to your recipe list.
@@ -146,6 +125,7 @@ Ingredients:
 Steps:
   1. Scramble egg
   2. Put egg in tortilla
+____________________________________________________________
 Possible allergens: eggs. Check ingredient labels.
 ____________________________________________________________
 ```
@@ -187,14 +167,14 @@ Examples:
 * `stock add 200g chicken by/2026-10-31` adds 200 grams of chicken that expires on Oct 31, 2026.
 * `stock list` shows your current inventory.
 
-Example output for `stock list`, assuming today's date is **2026-10-29**:
+Expected output for `stock list` (showing expiry tags):
 
 ```text
 ____________________________________________________________
 Current Home Stock:
 - 3 eggs
-- 200 g chicken (Expires: 2026-10-31) [EXPIRING SOON]
-- 2 milk (Expires: 2026-10-30) [EXPIRING SOON]
+- 200 g chicken (Expires: 2026-10-31)
+- 2 milk (Expires: 2026-10-20) [EXPIRING SOON]
 - 1 cheese (Expires: 2026-10-01) [EXPIRED]
 ____________________________________________________________
 ```
@@ -206,10 +186,6 @@ Error: Not enough eggs in stock. You only have 3.0
 ```
 
 > **Caution:** The stock feature does not do unit conversions. If you add `1 kg chicken` and try to remove `500 g chicken`, the command will fail because the units (`kg` and `g`) do not match.
-
-Expiry dates before today are marked `[EXPIRED]`; today and the following three days are marked
-`[EXPIRING SOON]`. These labels do not remove items automatically. **Stock and its expiry dates are
-not saved across restarts** in this version.
 
 ### Built-in allergen warnings
 
@@ -320,30 +296,22 @@ For a recipe without supported names, the output says
 `substitute` without a title reports usage; `substitute Missing` reports `Recipe not found: Missing`.
 
 ### Searching for recipes: `search`
-Searches recipes using one or more filters for the title, ingredients or available stock.
+Searches recipes using one or more filters for the recipe name and/or its ingredients.
 
-Format: `search f/{name/ingredient/stock}/{KEYWORD} [f/{name/ingredient/stock}/{KEYWORD} ...]`
+Format: `search f/{name/ingredient}/{KEYWORD} [f/{name/ingredient}/{KEYWORD} ...]`
 
 * Use `f/name/KEYWORD` to match `KEYWORD` against a recipe name.
 * Use `f/ingredient/KEYWORD` to match `KEYWORD` against an ingredient name.
-* Title and ingredient matching use case-insensitive **substrings**: `chick` matches `Chicken Pasta`.
-* Use `f/stock/SERVINGS` to find recipes for which stock has enough of each required ingredient at
-  the requested positive whole-number serving size. This checks quantities without consuming stock
-  or resizing your saved recipes. An ingredient-free recipe also passes this filter.
+* Matching is case-insensitive and compares the complete name or ingredient text.
 * Multiple filters are combined with AND logic: a recipe must satisfy every filter.
-* Separate filters with spaces. Keywords cannot contain spaces; use a shorter substring instead.
-* The filter type and keyword are required. Supported fields are `name`, `ingredient` and `stock`.
-* Results follow the original recipe order, not alphabetical order.
-* Stock matching requires the same ingredient name and unit, ignoring case. It does not convert
-  units or treat singular/plural names as equivalent, unlike `stock add/remove`. Expired stock is
-  included in the quantity check; inspect `stock list` and ingredient suitability separately.
+* Separate filters with spaces. Extra spaces before, between, or after filters are allowed.
+* The filter type and keyword are required. The filter must be either `name` or `ingredient`.
 
 Examples:
 
-* `search f/name/Omelette` finds titles containing `Omelette`, ignoring letter case.
-* `search f/ingredient/chicken` finds ingredient names containing `chicken`, ignoring letter case.
-* `search f/name/Chicken f/ingredient/chicken` combines both requirements.
-* `search f/stock/2` finds recipes whose ingredients are available for two servings.
+* `search f/name/Omelette` finds the recipe whose name is `Omelette`, ignoring letter case.
+* `search f/ingredient/chicken` finds recipes with an ingredient named `chicken`, ignoring letter case.
+* `search f/name/Chicken f/ingredient/chicken` finds recipes whose name is `Chicken` and which contain an ingredient named `chicken`.
 
 Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
 ### Viewing all recipes: `view`
@@ -435,37 +403,26 @@ Possible errors:
 
 ## Saving the data
 
-Your recipes are saved automatically to `data/whatscooking.txt` after every successful command.
-There is no need to save manually. The path is relative to the terminal's working folder.
+Your recipes are saved automatically to `data/whatscooking.txt` after every command. There is no need to save manually.
 
 The next time you start the app, your recipes are loaded back from that file automatically.
-
-Stock is session-only and is not written to this file. If the recipe file is corrupted or unreadable,
-the app shows an error and starts with an empty list. Back up the file before continuing: a later
-successful command can overwrite it with the current list.
-
-### Coming soon (not implemented in v2.0)
-
-Editing individual ingredients or steps, ratings, times-cooked counts, cooking-time fields and filters,
-a standalone `cookable` command, recipe export through `share`, and automatic ingredient swaps are
-not available. Use only the commands documented in the summary below.
 
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?
 
-**A**: Close the app and copy `data/whatscooking.txt` into a `data` subfolder of the working folder
-you will use on the new computer. Home stock is not included in this file.
+**A**: Copy the `data/whatscooking.txt` file from your old computer to the same location (the folder where the app's jar file is) on your new computer.
 
 ## Command Summary
 
+{Give a 'cheat sheet' of commands here}
+
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
 * Edit a recipe's title, type or note `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`
-* Search recipes `search f/{name/ingredient/stock}/{KEYWORD} [...]`
+* Search recipes `search f/{name/ingredient}/{KEYWORD}`
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
 * View ingredient alternatives `substitute RECIPE_NAME`
 * Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
 * Manage home stock `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
-* Exit `bye` or `exit`

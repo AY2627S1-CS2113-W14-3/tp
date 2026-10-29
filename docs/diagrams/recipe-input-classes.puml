@@ -6,7 +6,6 @@ skinparam classAttributeIconSize 0
 skinparam defaultFontName SansSerif
 skinparam defaultFontSize 15
 hide empty members
-hide circle
 top to bottom direction
 
 abstract class Command {

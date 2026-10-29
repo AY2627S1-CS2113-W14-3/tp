@@ -6,7 +6,7 @@ skinparam defaultFontSize 15
 skinparam sequenceMessageAlign center
 hide footbox
 
-participant "<<class>>\nWhatsCooking" as App
+participant ":WhatsCooking" as App
 participant ":Storage" as Storage
 participant "<<class>>\nFiles" as Files
 participant "recipes:RecipeList" as Recipes

@@ -6,7 +6,7 @@ skinparam defaultFontSize 15
 skinparam sequenceMessageAlign center
 hide footbox
 
-participant "<<class>>\nWhatsCooking" as App
+participant ":WhatsCooking" as App
 participant ":Ui" as UI
 participant "<<class>>\nParser" as Parser
 participant "command:Command" as Command
@@ -20,35 +20,33 @@ deactivate UI
 App -> Parser : parse(fullCommand, stockList)
 activate Parser
 create Command
-Parser -> Command : create concrete command(...)
-activate Command
-note right of Command
-  Concrete subclass selected
-  from the command word.
-end note
-Command --> Parser : command
-deactivate Command
+Parser -> Command
 Parser --> App : command
 deactivate Parser
 
-App -> Command : execute(recipes, ui)
-activate Command
-Command --> App
-deactivate Command
-App -> Storage : save(recipes)
-activate Storage
-Storage --> App
-deactivate Storage
-App -> Command : isExit()
-activate Command
-Command --> App : isExit
-deactivate Command
+alt command word recognised and execution succeeds
+  App -> Command : execute(recipes, ui)
+  activate Command
+  Command --> App
+  deactivate Command
+  App -> Storage : save(recipes)
+  activate Storage
+  Storage --> App
+  deactivate Storage
+  App -> Command : isExit()
+  activate Command
+  Command --> App : isExit
+  deactivate Command
+else WhatsCookingException from parse, execute or save
+  App -> UI : showError(message)
+  activate UI
+  UI --> App
+  deactivate UI
+end
 
 note over App, Storage
-  Successful path; repeated until isExit is true.
-  If parse, execute or save throws WhatsCookingException,
-  remaining calls are skipped. Ui.showError reports it,
-  then the loop reads the next command.
-  Command internals and error interactions are omitted.
+  Repeated until isExit is true. On an exception, isExit stays
+  false and the loop reads the next command. The command's
+  own calls to RecipeList and Ui are omitted.
 end note
 @enduml

@@ -19,16 +19,17 @@ scales ingredient quantities, flags possible allergens and tracks home stock.
   `retrieve`, with whole-word matching, stable results, assertions and logging
   ([PR #39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39)). Also addressed the tutor's
   `Ingredient` readability feedback and checked `add s/` compatibility with `modify`.
-* **Ingredient alternatives:** Implemented the Week 11 `substitute` command on this branch (pending
-  PR merge). It uses an explicit complete-name catalogue, returns immutable suggestions with cooking
-  caveats, and preserves every recipe quantity and field. Tests cover compound names, numbering,
+* **Ingredient alternatives:** Implemented the Week 11 `substitute` command
+  ([PR #56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56), pending merge). It uses an explicit
+  complete-name catalogue, returns immutable suggestions with cooking caveats, and preserves every
+  recipe quantity and field. Tests cover compound names, numbering,
   locale differences, save/restart and later resizing.
 * **Testing:** Added ingredient parsing/display, scaling, command and CLI workflow tests. The workflow
   tests use isolated directories and actual Java processes to check persistence and console behavior.
 * **Documentation:** Wrote the UG sections for structured ingredients, `modify`, allergen warnings
   and `substitute`. Documented their class design, execution flows, alternatives and limitations in
-  the DG, with editable class and sequence diagrams. The Week 11 revision also improves the shared
-  quick start, search/stock descriptions, manual tests and UML notation in response to review.
+  the DG, with editable class and sequence diagrams. The Week 11 revision separates Design and
+  Implementation, updates my diagrams in response to review, and adds substitution manual tests.
 * **Team review and integration:** Reviewed stock-expiry
   [PR #48](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48#pullrequestreview-5669254981), identifying
   [mutation before a failed removal](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48#discussion_r4390265577),
