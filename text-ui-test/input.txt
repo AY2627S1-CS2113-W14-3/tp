@@ -17,5 +17,7 @@ add Garlic bread, side s/4 i/2 tbsp butter st/Spread butter st/Toast
 edit 3 title/Cheesy garlic bread n/Add cheese before toasting
 edit 3 title/Spice mix
 edit 9 type/main
+edit 3 i/1 3 tbsp butter st/2 Toast until golden
+edit cheesy  GARLIC bread n/Serve warm
 view
 bye

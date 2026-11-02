@@ -38,8 +38,16 @@ allergens and keep track of the ingredients they have at home, all through a com
       both commands accept the same values and show the same error messages.
       (Pull requests [\#34](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/34),
       [\#46](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/46))
-    * Wrote tests for all of the above: `AddCommandTest`, `EditCommandTest`, `RecipeListTest` and new cases in the
-      text UI test.
+    * Extended `edit` (v2.1) to choose a recipe by number or full name, and to replace one ingredient or step,
+      e.g. `edit egg taco i/2 5 corn tortillas st/1 Whisk the eggs`. It reuses the same ingredient and step
+      checks as `add`, and all changes are queued until every part is valid, so a rejected `edit` never
+      half-changes a recipe.
+    * Fixed bugs (v2.1): titles that differed only in extra spaces between words slipped past the duplicate
+      check; recipes without a type were shown as `(, serves 1)`; and types such as `lunch, extra` were accepted.
+      Types are now one word, with other details going into the note. Titles made only of digits (e.g. `7`) are
+      now rejected, because they clashed with recipe indexes in `retrieve`, `delete` and `edit`.
+    * Wrote tests for all of the above: `AddCommandTest`, `EditCommandTest`, `RecipeListTest`, `RecipeTest` and
+      new cases in the text UI test.
 
 * **Documentation**:
     * User Guide:
@@ -48,8 +56,8 @@ allergens and keep track of the ingredients they have at home, all through a com
     * Developer Guide:
         * Wrote the section "Recipe creation and editing: `add` and `edit`", covering the design, the command flow and
           the alternatives considered.
-        * Added three UML diagrams: a class diagram (Figure 7), a sequence diagram for `add` (Figure 8) and an
-          activity diagram for `edit` (Figure 9).
+        * Added three UML diagrams: a class diagram of the classes involved, a sequence diagram for `add` and an
+          activity diagram for `edit`, and updated them to follow the course's UML notation.
         * Added user stories, non-functional requirements, glossary terms and manual testing instructions for `add`
           and `edit`.
 

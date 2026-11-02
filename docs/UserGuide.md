@@ -2,7 +2,10 @@
 
 ## Introduction
 
-{Give a product intro}
+What's Cooking is a recipe manager for home cooks who prefer typing to clicking. You can store recipes with
+their ingredients, steps and notes, find them quickly, resize them for a different number of servings, see
+possible allergens and ingredient alternatives, and keep track of the ingredients you have at home, all from
+a command-line interface.
 
 ## Quick Start
 
@@ -24,7 +27,14 @@
 
 ## Features
 
-{Give detailed description of each feature}
+> **Notes about the command format:**
+>
+> * Words in `UPPER_CASE` are values you supply, e.g. in `add TITLE`, `TITLE` can be `egg taco`.
+> * Items in square brackets are optional, e.g. `add TITLE[, TYPE]` can be `add egg taco` or `add egg taco, snack`.
+> * Items followed by `...` can be given more than once, e.g. `[st/STEP]...` can be `st/Whisk st/Fry`.
+> * A prefix such as `s/`, `i/`, `st/` or `n/` starts a new part of a command and must follow a space.
+> * Command words are case-sensitive: type `add`, not `Add`. Recipe names are matched ignoring letter case.
+> * `INDEX` is a recipe's number as shown by `view`. It must be a positive whole number.
 
 ### Adding a recipe: `add`
 Adds a new recipe to your recipe list.
@@ -32,9 +42,13 @@ Adds a new recipe to your recipe list.
 Format: `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
 
 * `TITLE` is required. Everything else is optional.
-* Each recipe must have its own title. A title that is already used is rejected, ignoring letter case,
-  so `Egg Taco` and `egg taco` count as the same title.
-* `TYPE` goes after the first comma, e.g. `dessert`, `main`, `snack`. If you type a comma, the type cannot be left empty.
+* Each recipe must have its own title. A title that is already used is rejected, ignoring letter case and
+  extra spaces, so `Egg Taco`, `egg taco`, and `egg taco` typed with several spaces between the words all count
+  as the same title. Extra spaces inside a title are saved as one space.
+* A title cannot be only a number (e.g. `7`), because numbers are used as recipe indexes. `7-layer cake` is fine.
+* `TYPE` goes after the first comma, e.g. `dessert`, `main`, `snack`. It must be **one word** made of letters,
+  optionally joined by hyphens (e.g. `air-fryer`). If you type a comma, the type cannot be left empty.
+  Put any other details, such as `light lunch for two`, in the note (`n/`).
 * Parts must be in this order: title and type, then `s/`, then `i/`, then `st/`, then `n/`.
 * **Serving size (`s/`)**: how many people the recipe serves. It must be a positive whole number, e.g. `s/4`.
   If you leave it out, the recipe serves 1. The `modify` command uses this number when scaling ingredients.
@@ -78,30 +92,41 @@ ____________________________________________________________
 
 ### Editing a recipe: `edit`
 
-Changes the title, type and/or note of an existing recipe. Ingredients, steps and serving size stay the same.
+Changes the title, type, note, one ingredient and/or one step of an existing recipe. The serving size stays the same.
 
-Format: `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`
+Format: `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]`
+or `edit RECIPE_NAME [title/NEW_TITLE] ...` (the same parts)
 
-* `INDEX` is the positive, 1-based number shown by `view`.
-* Give at least one of `title/`, `type/` and `n/`. They can be in any order, but each only once.
-* The new values replace the old ones and cannot be empty.
-* The new title cannot be one that another recipe already uses (ignoring letter case).
+* Choose the recipe by its `INDEX`, the positive, 1-based number shown by `view`, or by its full `RECIPE_NAME`.
+  Matching a name ignores letter case and extra spaces, as in `retrieve`. A whole number is always read as an
+  `INDEX`, not as a name.
+* Give at least one part. The parts can be in any order, but each only once.
+* The new values replace the old ones and cannot be empty. A new type must be one word, as in [`add`](#adding-a-recipe-add).
+* The new title cannot be one that another recipe already uses (ignoring letter case and extra spaces).
   Changing only the letter case of a recipe's own title, e.g. `egg taco` to `Egg Taco`, is allowed.
+* **Ingredient (`i/`)**: `NUMBER` is the ingredient's position as shown by `retrieve`. The new ingredient uses the
+  same format as in `add`, e.g. `i/2 5 corn tortillas`. Only one ingredient can be replaced per command.
+* **Step (`st/`)**: `NUMBER` is the step's position as shown by `retrieve`, e.g. `st/1 Whisk the eggs`.
+* A replaced ingredient's quantity is for the recipe's current serving size.
 * If any part is invalid, the recipe is **not** changed.
 * To change the serving size, use [`modify`](#modifying-a-recipe-modify) instead.
 
 Examples:
 
 * `edit 1 title/egg wrap` renames recipe 1 to `egg wrap`.
+* `edit egg taco st/2 Fold the wrap` replaces step 2 of the recipe named `egg taco`.
 * `edit 3 type/side n/Add cheese before toasting` changes recipe 3's type and note.
+* `edit 3 i/1 3 tbsp butter st/2 Toast until golden` replaces ingredient 1 and step 2 of recipe 3.
 
-Expected output (for `edit 3 title/Cheesy garlic bread n/Add cheese before toasting`):
+Expected output (for `edit 3 i/1 3 tbsp butter st/2 Toast until golden`):
 
 ```
 ____________________________________________________________
 Updated recipe 3:
 Cheesy garlic bread (side, serves 4)
 Note: Add cheese before toasting
+Ingredient 1: 3 tbsp butter
+Step 2: Toast until golden
 ____________________________________________________________
 ```
 
@@ -110,7 +135,10 @@ Possible errors:
 * `edit 9 type/main` when there are only 3 recipes: `Error: Recipe 9 does not exist; you have 3 recipe(s).`
 * `edit 1 title/pancakes` when another recipe is called `pancakes`:
   `Error: A recipe called "pancakes" already exists. Choose a different title.`
-* `edit 1` or `edit 1 egg wrap`: an error showing the correct format.
+* `edit 3 i/5 1 tsp salt` when recipe 3 has 1 ingredient:
+  `Error: Ingredient 5 does not exist; this recipe has 1 ingredient(s).`
+* `edit waffles type/main` when there is no recipe called `waffles`: `Error: Recipe not found: waffles`
+* `edit 1` or `edit egg taco`: an error showing the correct format.
 
 ### Retrieving a recipe: `retrieve`
 
@@ -470,7 +498,7 @@ and deleting it does not affect your recipes.
 {Give a 'cheat sheet' of commands here}
 
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
-* Edit a recipe's title, type or note `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`
+* Edit a recipe `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]` or `edit RECIPE_NAME ...`
 * Search recipes `search f/{name/ingredient}/{KEYWORD}`
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`

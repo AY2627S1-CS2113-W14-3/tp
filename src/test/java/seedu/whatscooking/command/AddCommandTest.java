@@ -184,6 +184,43 @@ class AddCommandTest {
     }
 
     @Test
+    public void execute_extraSpacesInsideTitle_storedOnceAndCaughtAsDuplicate() throws WhatsCookingException {
+        RecipeList recipes = runAdd("egg   taco");
+        assertEquals("egg taco", recipes.get(0).getTitle());
+
+        AddCommand command = new AddCommand("EGG  TACO, snack");
+        assertThrows(WhatsCookingException.class, () -> command.execute(recipes, new Ui()));
+        assertEquals(1, recipes.size());
+    }
+    @Test
+    public void execute_titleOnlyDigits_throwsAndAddsNothing() {
+        assertAddRejected("7");
+        assertAddRejected("2026, snack");
+        assertAddRejected(" 0042  i/2 eggs");
+    }
+
+    @Test
+    public void execute_titleStartingWithDigits_accepted() throws WhatsCookingException {
+        assertEquals("7-layer cake", runAdd("7-layer cake, dessert").get(0).getTitle());
+        assertEquals("7 up float", runAdd("7 up float").get(0).getTitle());
+    }
+
+    @Test
+    public void execute_oneWordType_accepted() throws WhatsCookingException {
+        assertEquals("snack", runAdd("fries, snack").get(0).getType());
+        assertEquals("air-fryer", runAdd("fries, air-fryer").get(0).getType());
+    }
+
+    @Test
+    public void execute_typeNotOneWord_throwsAndAddsNothing() {
+        assertAddRejected("sandwich, lunch, extra");
+        assertAddRejected("toast, light snack");
+        assertAddRejected("toast, snack2");
+        assertAddRejected("toast, (snack)");
+        assertAddRejected("toast, -snack");
+    }
+
+    @Test
     public void parse_addCommand_addsRecipe() throws WhatsCookingException {
         RecipeList recipes = new RecipeList();
         Parser.parse("add egg taco").execute(recipes, new Ui());
