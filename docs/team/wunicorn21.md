@@ -41,11 +41,12 @@ allergens and keep track of the ingredients they have at home, all through a com
     * Extended `edit` (v2.1) to choose a recipe by number or full name, and to replace one ingredient or step,
       e.g. `edit egg taco i/2 5 corn tortillas st/1 Whisk the eggs`. It reuses the same ingredient and step
       checks as `add`, and all changes are queued until every part is valid, so a rejected `edit` never
-      half-changes a recipe.
+      half-changes a recipe. (Pull request [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63))
     * Fixed bugs (v2.1): titles that differed only in extra spaces between words slipped past the duplicate
       check; recipes without a type were shown as `(, serves 1)`; and types such as `lunch, extra` were accepted.
       Types are now one word, with other details going into the note. Titles made only of digits (e.g. `7`) are
       now rejected, because they clashed with recipe indexes in `retrieve`, `delete` and `edit`.
+      (Pull request [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63))
     * Wrote tests for all of the above: `AddCommandTest`, `EditCommandTest`, `RecipeListTest`, `RecipeTest` and
       new cases in the text UI test.
 
@@ -54,26 +55,38 @@ allergens and keep track of the ingredients they have at home, all through a com
         * Wrote the sections for `add` and `edit`, including formats, rules, examples, expected output and errors.
         * Added `add` and `edit` to the Command Summary.
     * Developer Guide:
-        * Wrote the section "Recipe creation and editing: `add` and `edit`", covering the design, the command flow and
-          the alternatives considered.
+        * Wrote the design subsection "Recipe input design" (responsibilities, design rules and efficiency) and the
+          implementation subsection "Recipe creation and editing: `add` and `edit`" (command flows, validation and
+          error handling, alternatives considered and automated verification).
         * Added three UML diagrams: a class diagram of the classes involved, a sequence diagram for `add` and an
-          activity diagram for `edit`, and updated them to follow the course's UML notation.
+          activity diagram for `edit`, and updated them to follow the course's UML notation
+          ([\#57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57)).
         * Added user stories, non-functional requirements, glossary terms and manual testing instructions for `add`
           and `edit`.
 
+* **Contributions to team-based tasks**:
+    * Wrote the User Guide's introduction and "Notes about the command format", replacing the template placeholders.
+
 * **Project management**:
-    * Planned and tracked my v1.0 and v2.0 work with issues and milestones
+    * Planned and tracked my v1.0, v2.0 and v2.1 work with issues and milestones
       ([\#19](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/19),
       [\#32](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/32),
-      [\#33](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/33)).
+      [\#33](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/33),
+      [\#61](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/61),
+      [\#62](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/62)).
     * Merged teammates' pull requests after review, e.g.
-      [\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39).
+      [\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39),
+      [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50),
+      [\#53](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/53) and
+      [\#56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56).
 
 * **Community**:
     * Reviewed teammates' pull requests, with non-trivial review comments on
       [\#18](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/18),
-      [\#36](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/36) and
-      [\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39), and approvals on
+      [\#36](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/36),
+      [\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39) and
+      [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50) (Developer Guide review: figure numbering,
+      a broken author link and a mismatch with the User Guide), and approvals on
       [\#2](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/2),
       [\#3](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/3),
       [\#25](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/25) and
