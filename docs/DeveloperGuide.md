@@ -268,12 +268,12 @@ replace input validation. Gradle `run` and tests enable them; when launching the
   `FINE` records, so logging only at `FINE` would also keep the console clean. It was rejected because any
   `WARNING` record would then appear in the user's output.
 * **Limitations.**
-    * If saving fails, for example because the data file is read-only, `bye` prints the goodbye message
-      followed by the save error, and the loop continues instead of exiting.
-    * `Ui.readCommand` expects another line of input. If input ends without `bye` (for example, after
-      Ctrl+D or at the end of a redirected input file), the application stops with a
-      `NoSuchElementException` instead of exiting cleanly.
-    * `whatscooking.log` is appended to on every run and never trimmed.
+  * If saving fails, for example because the data file is read-only, `bye` prints the goodbye message
+    followed by the save error, and the loop continues instead of exiting.
+  * `Ui.readCommand` expects another line of input. If input ends without `bye` (for example, after
+    Ctrl+D or at the end of a redirected input file), the application stops with a
+    `NoSuchElementException` instead of exiting cleanly.
+  * `whatscooking.log` is appended to on every run and never trimmed.
 
 #### Automated verification
 
@@ -383,14 +383,14 @@ A damaged file therefore never stops the application from starting.
 * **Rewriting the whole file (current) or appending changes.** Rewriting keeps the file identical to the
   in-memory list after deletes and edits, at the cost of writing every recipe each time.
 * **Limitations.**
-    * Quantities are saved as decimals and reloaded as `double`, so the exact fractions used by `modify`
-      (see [Serving-size modification](#serving-size-modification-modify)) are not preserved after a
-      restart.
-    * Only recipes are saved. Items added with `stock` are lost when the application exits.
-    * When a corrupted file is replaced with an empty list, the next successful command overwrites the
-      file. Copy the file before entering another command if its contents need to be recovered.
-    * Loading does not check for duplicate titles, so a hand-edited file can introduce two recipes that
-      `add` would have rejected.
+  * Quantities are saved as decimals and reloaded as `double`, so the exact fractions used by `modify`
+    (see [Serving-size modification](#serving-size-modification-modify)) are not preserved after a
+    restart.
+  * Only recipes are saved. Items added with `stock` are lost when the application exits.
+  * When a corrupted file is replaced with an empty list, the next successful command overwrites the
+    file. Copy the file before entering another command if its contents need to be recovered.
+  * Loading does not check for duplicate titles, so a hand-edited file can introduce two recipes that
+    `add` would have rejected.
 
 #### Automated verification
 
@@ -1136,4 +1136,3 @@ Run these actions in order in an empty test folder, so no saved recipe has the s
 | `edit 1 i/9 1 egg` and `edit 1 st/1` | Each is rejected; recipe 1 is unchanged. |
 | `edit EGG   WRAP n/By name` (extra spaces), then `edit waffles n/x` | The first edits recipe 1 by its name; the second is rejected with "Recipe not found". |
 | `bye`, restart in the same folder, then `retrieve 1` | The edited title, type and note reappear after loading. |
-

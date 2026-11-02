@@ -58,4 +58,10 @@ class RecipeTest {
         // expected: "Pancakes (breakfast, serves 4)"
         assertEquals("Pancakes (breakfast, serves 4)", recipe.toString());
     }
+
+    @Test
+    public void toString_noType_omitsEmptyType() {
+        Recipe recipe = new Recipe("Pancakes", "");
+        assertEquals("Pancakes (serves 1)", recipe.toString());
+    }
 }
