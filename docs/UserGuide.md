@@ -90,56 +90,6 @@ ____________________________________________________________
 
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
 
-### Editing a recipe: `edit`
-
-Changes the title, type, note, one ingredient and/or one step of an existing recipe. The serving size stays the same.
-
-Format: `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]`
-or `edit RECIPE_NAME [title/NEW_TITLE] ...` (the same parts)
-
-* Choose the recipe by its `INDEX`, the positive, 1-based number shown by `view`, or by its full `RECIPE_NAME`.
-  Matching a name ignores letter case and extra spaces, as in `retrieve`. A whole number is always read as an
-  `INDEX`, not as a name.
-* Give at least one part. The parts can be in any order, but each only once.
-* The new values replace the old ones and cannot be empty. A new type must be one word, as in [`add`](#adding-a-recipe-add).
-* The new title cannot be one that another recipe already uses (ignoring letter case and extra spaces).
-  Changing only the letter case of a recipe's own title, e.g. `egg taco` to `Egg Taco`, is allowed.
-* **Ingredient (`i/`)**: `NUMBER` is the ingredient's position as shown by `retrieve`. The new ingredient uses the
-  same format as in `add`, e.g. `i/2 5 corn tortillas`. Only one ingredient can be replaced per command.
-* **Step (`st/`)**: `NUMBER` is the step's position as shown by `retrieve`, e.g. `st/1 Whisk the eggs`.
-* A replaced ingredient's quantity is for the recipe's current serving size.
-* If any part is invalid, the recipe is **not** changed.
-* To change the serving size, use [`modify`](#modifying-a-recipe-modify) instead.
-
-Examples:
-
-* `edit 1 title/egg wrap` renames recipe 1 to `egg wrap`.
-* `edit egg taco st/2 Fold the wrap` replaces step 2 of the recipe named `egg taco`.
-* `edit 3 type/side n/Add cheese before toasting` changes recipe 3's type and note.
-* `edit 3 i/1 3 tbsp butter st/2 Toast until golden` replaces ingredient 1 and step 2 of recipe 3.
-
-Expected output (for `edit 3 i/1 3 tbsp butter st/2 Toast until golden`):
-
-```
-____________________________________________________________
-Updated recipe 3:
-Cheesy garlic bread (side, serves 4)
-Note: Add cheese before toasting
-Ingredient 1: 3 tbsp butter
-Step 2: Toast until golden
-____________________________________________________________
-```
-
-Possible errors:
-
-* `edit 9 type/main` when there are only 3 recipes: `Error: Recipe 9 does not exist; you have 3 recipe(s).`
-* `edit 1 title/pancakes` when another recipe is called `pancakes`:
-  `Error: A recipe called "pancakes" already exists. Choose a different title.`
-* `edit 3 i/5 1 tsp salt` when recipe 3 has 1 ingredient:
-  `Error: Ingredient 5 does not exist; this recipe has 1 ingredient(s).`
-* `edit waffles type/main` when there is no recipe called `waffles`: `Error: Recipe not found: waffles`
-* `edit 1` or `edit egg taco`: an error showing the correct format.
-
 ### Retrieving a recipe: `retrieve`
 
 Displays a recipe's title, type, serving size, ingredients, steps and optional note.
@@ -374,6 +324,56 @@ ____________________________________________________________
 
 If no recipes have been added yet, this prints `No recipes found.` instead.
 
+### Editing a recipe: `edit`
+
+Changes the title, type, note, one ingredient and/or one step of an existing recipe. The serving size stays the same.
+
+Format: `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]`
+or `edit RECIPE_NAME [title/NEW_TITLE] ...` (the same parts)
+
+* Choose the recipe by its `INDEX`, the positive, 1-based number shown by `view`, or by its full `RECIPE_NAME`.
+  Matching a name ignores letter case and extra spaces, as in `retrieve`. A whole number is always read as an
+  `INDEX`, not as a name.
+* Give at least one part. The parts can be in any order, but each only once.
+* The new values replace the old ones and cannot be empty. A new type must be one word, as in [`add`](#adding-a-recipe-add).
+* The new title cannot be one that another recipe already uses (ignoring letter case and extra spaces).
+  Changing only the letter case of a recipe's own title, e.g. `egg taco` to `Egg Taco`, is allowed.
+* **Ingredient (`i/`)**: `NUMBER` is the ingredient's position as shown by `retrieve`. The new ingredient uses the
+  same format as in `add`, e.g. `i/2 5 corn tortillas`. Only one ingredient can be replaced per command.
+* **Step (`st/`)**: `NUMBER` is the step's position as shown by `retrieve`, e.g. `st/1 Whisk the eggs`.
+* A replaced ingredient's quantity is for the recipe's current serving size.
+* If any part is invalid, the recipe is **not** changed.
+* To change the serving size, use [`modify`](#modifying-a-recipe-modify) instead.
+
+Examples:
+
+* `edit 1 title/egg wrap` renames recipe 1 to `egg wrap`.
+* `edit egg taco st/2 Fold the wrap` replaces step 2 of the recipe named `egg taco`.
+* `edit 3 type/side n/Add cheese before toasting` changes recipe 3's type and note.
+* `edit 3 i/1 3 tbsp butter st/2 Toast until golden` replaces ingredient 1 and step 2 of recipe 3.
+
+Expected output (for `edit 3 i/1 3 tbsp butter st/2 Toast until golden`):
+
+```
+____________________________________________________________
+Updated recipe 3:
+Cheesy garlic bread (side, serves 4)
+Note: Add cheese before toasting
+Ingredient 1: 3 tbsp butter
+Step 2: Toast until golden
+____________________________________________________________
+```
+
+Possible errors:
+
+* `edit 9 type/main` when there are only 3 recipes: `Error: Recipe 9 does not exist; you have 3 recipe(s).`
+* `edit 1 title/pancakes` when another recipe is called `pancakes`:
+  `Error: A recipe called "pancakes" already exists. Choose a different title.`
+* `edit 3 i/5 1 tsp salt` when recipe 3 has 1 ingredient:
+  `Error: Ingredient 5 does not exist; this recipe has 1 ingredient(s).`
+* `edit waffles type/main` when there is no recipe called `waffles`: `Error: Recipe not found: waffles`
+* `edit 1` or `edit egg taco`: an error showing the correct format.
+
 ### Modifying a recipe: `modify`
 
 Changes the serving size of an existing recipe and automatically scales all ingredient quantities proportionally.
@@ -496,10 +496,10 @@ and deleting it does not affect your recipes.
 ## Command Summary
 
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
-* Edit a recipe `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]` or `edit RECIPE_NAME ...`
 * Search recipes `search f/{name/ingredient}/{KEYWORD}`
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
+* Edit a recipe `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]` or `edit RECIPE_NAME ...`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
 * View ingredient alternatives `substitute RECIPE_NAME`
 * Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
