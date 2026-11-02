@@ -1,0 +1,36 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+top to bottom direction
+
+class WhatsCooking {
+  -{static} loadRecipes(storage, ui): RecipeList
+}
+class Storage {
+  -filePath: Path
+  +Storage()
+  +Storage(filePath: String)
+  +load(): RecipeList
+  +save(recipes)
+  -readRecipe(lines, index, recipes): int
+  -writeRecipe(lines, recipe)
+}
+class RecipeList
+class Recipe
+class Ingredient
+class WhatsCookingException
+
+WhatsCooking --> Storage : storage
+WhatsCooking ..> RecipeList : passes to save
+Storage ..> RecipeList : creates/reads
+Storage ..> Recipe : reads/rebuilds
+Storage ..> Ingredient : reads/rebuilds
+Storage ..> WhatsCookingException : throws
+RecipeList --> "0..*" Recipe : recipes
+Recipe --> "0..*" Ingredient : ingredients
+@enduml

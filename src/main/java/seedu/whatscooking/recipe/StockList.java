@@ -1,15 +1,16 @@
 package seedu.whatscooking.recipe;
 
 import java.util.ArrayList;
-import seedu.whatscooking.WhatsCookingException;
 import java.util.Collections;
 import java.util.List;
+
+import seedu.whatscooking.WhatsCookingException;
 
 /**
  * Holds the ingredients currently available at home.
  */
 public class StockList {
-    private final ArrayList<Ingredient> ingredients;
+    private final ArrayList<StockItem> ingredients;
 
     public StockList() {
         this.ingredients = new ArrayList<>();
@@ -21,12 +22,12 @@ public class StockList {
      *
      * @param newItem the ingredient to add
      */
-    public void add(Ingredient newItem) {
+    public void add(StockItem newItem) {
         assert newItem != null : "Command should validate before adding";
 
-        for (Ingredient item : ingredients) {
+        for (StockItem item : ingredients) {
             // Check if name and unit match
-            if (isSameIngredient(item, newItem)) {
+            if (isSameIngredient(item, newItem) && item.isSameExpiry(newItem)) {
                 item.setQuantity(item.getQuantity() + newItem.getQuantity());
                 return;
             }
@@ -37,32 +38,67 @@ public class StockList {
 
     /**
      * Removes an ingredient from the stock.
-     * Throws exception if not found or not enough quantity.
+     * Prioritizes removing items that are expiring soonest.
+     * Throws an exception without modifying the stock if there is not enough quantity.
      *
      * @param toRemove the ingredient to remove
      * @throws WhatsCookingException if the ingredient is not found or there is not enough quantity
      */
-    public void remove(Ingredient toRemove) throws WhatsCookingException {
+    public void remove(StockItem toRemove) throws WhatsCookingException {
         assert toRemove != null : "Command should validate before removing";
 
-        for (Ingredient item : ingredients) {
+        List<StockItem> matches = new ArrayList<>();
+        double totalAvailable = 0;
+
+        for (StockItem item : ingredients) {
             if (isSameIngredient(item, toRemove)) {
-                if (item.getQuantity() < toRemove.getQuantity()) {
-                    throw new WhatsCookingException("Not enough " + item.getName() + " in stock. You only have "
-                            + item.getQuantity() + " " + (item.getUnit() == null ? "" : item.getUnit()));
-                }
+                matches.add(item);
+                totalAvailable += item.getQuantity();
+            }
+        }
 
-                double newQuantity = item.getQuantity() - toRemove.getQuantity();
+        if (matches.isEmpty()) {
+            throw new WhatsCookingException("Ingredient not found in stock: " + toRemove.getName());
+        }
 
+        if (totalAvailable + 0.0001 < toRemove.getQuantity()) {
+            throw new WhatsCookingException("Not enough " + toRemove.getName() + " in stock. You only have "
+                    + totalAvailable + " " + (toRemove.getUnit() == null ? "" : toRemove.getUnit()));
+        }
+
+        matches.sort((a, b) -> {
+            if (a.getExpiryDate() == null && b.getExpiryDate() == null) {
+                return 0;
+            }
+            if (a.getExpiryDate() == null) {
+                return 1;
+            }
+            if (b.getExpiryDate() == null) {
+                return -1;
+            }
+            return a.getExpiryDate().compareTo(b.getExpiryDate());
+        });
+
+        double remainingToRemove = toRemove.getQuantity();
+
+        for (StockItem item : matches) {
+            if (remainingToRemove <= 0) {
+                break;
+            }
+
+            if (item.getQuantity() <= remainingToRemove + 0.0001) {
+                remainingToRemove -= item.getQuantity();
+                ingredients.remove(item);
+            } else {
+                double newQuantity = item.getQuantity() - remainingToRemove;
                 if (newQuantity <= 0.0001) {
                     ingredients.remove(item);
                 } else {
                     item.setQuantity(newQuantity);
                 }
-                return;
+                remainingToRemove = 0;
             }
         }
-        throw new WhatsCookingException("Ingredient not found in stock: " + toRemove.getName());
     }
 
     /**
@@ -71,14 +107,14 @@ public class StockList {
      *
      * @return an unmodifiable list of ingredients.
      */
-    public List<Ingredient> getAll() {
+    public List<StockItem> getAll() {
         return Collections.unmodifiableList(ingredients);
     }
 
     /**
      * Checks if two ingredients are considered the same based on name (ignoring case and plurals) and unit.
      */
-    private boolean isSameIngredient(Ingredient item1, Ingredient item2) {
+    private boolean isSameIngredient(StockItem item1, StockItem item2) {
         boolean sameName = normalizeName(item1.getName()).equals(normalizeName(item2.getName()));
         boolean sameUnit = (item1.getUnit() == null && item2.getUnit() == null)
                 || (item1.getUnit() != null && item2.getUnit() != null

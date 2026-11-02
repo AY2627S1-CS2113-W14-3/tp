@@ -12,6 +12,7 @@ import seedu.whatscooking.command.filter.NameFilter;
 import seedu.whatscooking.command.filter.StockFilter;
 import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
+import seedu.whatscooking.recipe.StockItem;
 import seedu.whatscooking.recipe.StockList;
 
 /** Tests each search filter independently of SearchCommand. */
@@ -35,7 +36,7 @@ public class FilterTest {
     public void stockFilter_matchesAllIngredientsForRequestedServings()
             throws WhatsCookingException {
         StockList stock = new StockList();
-        stock.add(new Ingredient("4 eggs"));
+        stock.add(new StockItem(new Ingredient("4 eggs"),null)); //updated by Siyu
         Recipe recipe = new Recipe("Omelette", "main");
         recipe.addIngredient(new Ingredient("2 eggs"));
         recipe.setServingSize(2);

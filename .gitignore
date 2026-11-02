@@ -19,6 +19,7 @@ _temp/
 
 # Application log files
 *.log
+*.log.*
 
 # Saved recipe data
 /data/

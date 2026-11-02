@@ -1,0 +1,55 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+top to bottom direction
+
+class WhatsCooking {
+  +{static} main(args)
+  -{static} loadRecipes(storage, ui): RecipeList
+}
+class Parser <<utility>> {
+  +{static} parse(fullCommand, stockList): Command
+}
+abstract class Command {
+  +{abstract} execute(recipes, ui)
+  +isExit(): boolean
+}
+class "AddCommand, EditCommand,\nRetrieveCommand, DeleteCommand,\nSearchCommand, ModifyCommand,\nStockCommand, ViewCommand" as Others
+class ExitCommand {
+  +isExit(): boolean
+}
+class Ui {
+  +readCommand(): String
+  +showError(message)
+}
+class RecipeList
+class StockList
+class Storage {
+  +load(): RecipeList
+  +save(recipes)
+}
+class AppLogger <<utility>> {
+  +{static} getLogger(loggingClass): Logger
+}
+class WhatsCookingException
+
+WhatsCooking ..> Parser : parse input
+WhatsCooking ..> Command : execute
+WhatsCooking --> Ui
+WhatsCooking --> Storage
+WhatsCooking --> RecipeList : recipes
+WhatsCooking --> StockList : stockList
+Parser ..> Command : creates
+Command <|-- Others
+Command <|-- ExitCommand
+Command ..> RecipeList : reads/changes
+Command ..> Ui : reports to
+Storage ..> RecipeList : loads/saves
+WhatsCooking ..> WhatsCookingException : catches
+WhatsCooking ..> AppLogger : logs via
+@enduml

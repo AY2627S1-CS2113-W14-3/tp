@@ -6,6 +6,7 @@ skinparam classAttributeIconSize 0
 skinparam defaultFontName SansSerif
 skinparam defaultFontSize 15
 hide empty members
+hide circle
 top to bottom direction
 
 abstract class Command {
@@ -21,12 +22,15 @@ class RecipeInputParser <<utility>> {
   ~{static} parseTitle(text): String
   ~{static} parseType(text): String
   ~{static} parseServingSize(text): int
+  ~{static} parseIngredient(text): Ingredient
+  ~{static} parseStep(text): String
   ~{static} addIngredients(recipe, text)
   ~{static} addSteps(recipe, text)
   ~{static} parseNote(text): String
 }
 class RecipeList {
   +containsTitle(title): boolean
+  +getByName(name): Recipe
   +add(recipe)
   +get(index): Recipe
 }
@@ -37,6 +41,8 @@ class Recipe {
   -note: String
   +setTitle(title)
   +setType(type)
+  +setIngredient(index, ingredient)
+  +setStep(index, step)
   +setServingSize(servingSize)
   +setNote(note)
 }

@@ -1,0 +1,43 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+hide empty members
+hide circle
+
+class SubstituteCommand {
+  +execute(recipes, ui)
+}
+class RecipeList {
+  +getByName(name): Recipe
+}
+class Recipe {
+  +getIngredients(): List<Ingredient>
+}
+class Ingredient {
+  +getName(): String
+}
+class SubstitutionAdvisor <<utility>> {
+  {static} +suggest(ingredients)
+}
+class SubstitutionSuggestion <<immutable>> {
+  -ingredientNumber: int
+  -ingredientName: String
+  -replacement: String
+  -usageNote: String
+}
+class Ui {
+  +showSubstitutionSuggestions(...)
+}
+SubstituteCommand ..> RecipeList : finds by full name
+SubstituteCommand ..> Recipe : reads ingredients
+SubstituteCommand ..> SubstitutionAdvisor : requests advice
+SubstituteCommand ..> Ui : displays advice
+Recipe --> "0..*" Ingredient : ingredients
+SubstitutionAdvisor ..> Ingredient : reads names
+SubstitutionAdvisor ..> SubstitutionSuggestion : creates
+Ui ..> SubstitutionSuggestion : formats
+@enduml

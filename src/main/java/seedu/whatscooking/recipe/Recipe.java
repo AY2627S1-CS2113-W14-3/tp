@@ -144,6 +144,18 @@ public class Recipe {
     }
 
     /**
+     * Replaces the ingredient at the given 0-based position.
+     *
+     * @param index 0-based position of an existing ingredient
+     * @param ingredient the replacement ingredient
+     */
+    public void setIngredient(int index, Ingredient ingredient) {
+        assert index >= 0 && index < ingredients.size() : "Commands should check the ingredient number first";
+        assert ingredient != null : "Replacement ingredient should not be null";
+        ingredients.set(index, ingredient);
+    }
+
+    /**
      * Returns the preparation steps in the order they were added. The list is
      * read-only, so callers must go through {@link #addStep(String)} to change
      * it rather than modifying the returned list directly.
@@ -158,6 +170,18 @@ public class Recipe {
         steps.add(step);
     }
 
+    /**
+     * Replaces the step at the given 0-based position.
+     *
+     * @param index 0-based position of an existing step
+     * @param step the replacement step, which must not be blank
+     */
+    public void setStep(int index, String step) {
+        assert index >= 0 && index < steps.size() : "Commands should check the step number first";
+        assert step != null && !step.isBlank() : "Commands should reject a blank step first";
+        steps.set(index, step);
+    }
+
     public String getNote() {
         return note;
     }
@@ -166,8 +190,14 @@ public class Recipe {
         this.note = note;
     }
 
+    /**
+     * Returns e.g. "Egg Taco (snack, serves 2)", or "Egg Taco (serves 2)" when the recipe has no type.
+     */
     @Override
     public String toString() {
+        if (type.isEmpty()) {
+            return title + " (serves " + servingSize + ")";
+        }
         return title + " (" + type + ", serves " + servingSize + ")";
     }
 }

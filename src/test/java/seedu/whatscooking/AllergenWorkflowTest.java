@@ -69,7 +69,7 @@ class AllergenWorkflowTest {
                 """, "no-matches");
 
         assertTrue(output.contains("Egg milk (main, serves 1)"), output);
-        assertTrue(output.contains("Empty (, serves 1)"), output);
+        assertTrue(output.contains("Empty (serves 1)"), output);
         assertEquals(0, countWarnings(output), output);
     }
 

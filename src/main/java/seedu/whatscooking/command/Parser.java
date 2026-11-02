@@ -77,6 +77,8 @@ public class Parser {
             return new EditCommand(arguments);
         case "modify":
             return new ModifyCommand(arguments);    // Person E
+        case "substitute":
+            return new SubstituteCommand(arguments);
         case "stock":
             return new StockCommand(arguments, stockList);
         default:

@@ -13,6 +13,7 @@ import seedu.whatscooking.recipe.Ingredient;
 import seedu.whatscooking.recipe.Recipe;
 import seedu.whatscooking.recipe.RecipeList;
 import seedu.whatscooking.recipe.StockList;
+import seedu.whatscooking.recipe.StockItem;
 
 /**
  * Tests for {@link Parser}: every supported command word maps to the right
@@ -77,7 +78,7 @@ class ParserTest {
     @Test
     public void parse_searchUsesProvidedStockList() throws WhatsCookingException {
         StockList stock = new StockList();
-        stock.add(new Ingredient("2 eggs"));
+        stock.add(new StockItem(new Ingredient("2 eggs"),null));
         Recipe recipe = new Recipe("Omelette", "main");
         recipe.addIngredient(new Ingredient("2 eggs"));
         RecipeList recipes = new RecipeList();
