@@ -10,84 +10,77 @@ allergens and keep track of the ingredients they have at home, all through a com
 
 * **Code contributed**: [RepoSense link](https://nus-cs2113-ay2627-s1.github.io/tp-dashboard/?search=wunicorn21&breakdown=true)
 
-* **New Feature**: Added the ability to add a recipe in one command (`add`).
-    * What it does: creates a recipe from a single line containing a title, an optional type, serving size,
-      ingredients, steps and a note, e.g. `add egg taco, snack s/2 i/3 eggs st/Scramble egg n/Serve hot`.
-    * Justification: `add` is how every recipe enters the app, so every other feature (`retrieve`, `modify`,
-      `search`, allergen warnings, saving) depends on it.
-    * Highlights: every part of the line is checked before anything is saved, so an invalid command never leaves a
-      half-built recipe in the list. The parser keeps prefixes such as `i/` from being matched inside words like
-      `wasabi/`, and reports which part is wrong and how to fix it.
+* **Enhancements implemented**:
+    * **New feature: add a recipe in one command (`add`).**
+        * What it does: creates a recipe from one line with a title, optional type, serving size, ingredients,
+          steps and note, e.g. `add egg taco, snack s/2 i/3 eggs st/Scramble egg n/Serve hot`.
+        * Justification: every recipe enters the app through `add`, so `retrieve`, `modify`, `search`, allergen
+          warnings and saving all depend on it.
+        * Every part is checked before anything is saved, so an invalid command never leaves a
+          half-built recipe; prefixes such as `i/` are not mistaken inside words like `wasabi/`; each error says
+          what to fix.
+    * **New feature: edit an existing recipe (`edit`).**
+        * What it does: changes a recipe's title, type, note, one ingredient and/or one step, choosing the recipe
+          by number or full name, with parts in any order,
+          e.g. `edit egg taco i/2 5 corn tortillas st/1 Whisk the eggs`.
+        * Justification: users previously had to delete and re-add a recipe to fix a typo or update it.
+        * Every new value is checked first and the changes are applied only together, so a rejected
+          `edit` never half-changes a recipe. It reuses `add`'s checks, so both commands accept exactly the same
+          values.
+    * **Enhancements to existing features:**
+        * Blocked duplicate titles, ignoring case and extra spaces, including recipes loaded from a previous
+          session, and added an optional serving size (`s/`) that `modify` scales from.
+          ([\#34](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/34))
+        * Moved the checks shared by `add` and `edit` into one utility class, `RecipeInputParser`.
+          ([\#34](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/34),
+          [\#46](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/46))
+        * v2.1: extended `edit` to names, ingredients and steps; fixed extra-space duplicates, the `(, serves 1)`
+          display, multi-word types and digits-only titles that clashed with recipe indexes.
+          ([\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63))
+        * Wrote the tests for all of the above (`AddCommandTest`, `EditCommandTest`, `RecipeListTest`,
+          `RecipeTest` and text UI test cases).
 
-* **New Feature**: Added the ability to edit an existing recipe (`edit`).
-    * What it does: changes a recipe's title, type and/or note by its number, e.g.
-      `edit 1 title/egg wrap n/Add chilli`. The parts can be given in any order.
-    * Justification: users previously had to delete and re-add a recipe to fix a typo or update a note.
-    * Highlights: every new value is checked before any change is applied, so a rejected `edit` leaves the recipe
-      exactly as it was. A new title cannot match another recipe's title, but changing only the letter case of a
-      recipe's own title is allowed.
+* **Contributions to the UG**:
+    * Wrote the `add` and `edit` sections (formats, rules, examples, expected output and errors) and their
+      Command Summary entries.
+    * Wrote the introduction and "Notes about the command format", replacing the template placeholders.
 
-* **Enhancements to existing features**:
-    * Blocked duplicate recipe titles in `add`, ignoring letter case and surrounding spaces. This also covers
-      recipes loaded from a previous session. (Pull request [\#34](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/34))
-    * Added an optional serving size (`s/`) to `add`, which `modify` uses as the base when scaling ingredients.
-      (Pull request [\#34](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/34))
-    * Added note support and stricter input validation to `add`.
-      (Pull request [\#21](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/21))
-    * Refactored the input checks shared by `add` and `edit` into a single utility class, `RecipeInputParser`, so
-      both commands accept the same values and show the same error messages.
-      (Pull requests [\#34](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/34),
-      [\#46](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/46))
-    * Extended `edit` (v2.1) to choose a recipe by number or full name, and to replace one ingredient or step,
-      e.g. `edit egg taco i/2 5 corn tortillas st/1 Whisk the eggs`. It reuses the same ingredient and step
-      checks as `add`, and all changes are queued until every part is valid, so a rejected `edit` never
-      half-changes a recipe. (Pull request [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63))
-    * Fixed bugs (v2.1): titles that differed only in extra spaces between words slipped past the duplicate
-      check; recipes without a type were shown as `(, serves 1)`; and types such as `lunch, extra` were accepted.
-      Types are now one word, with other details going into the note. Titles made only of digits (e.g. `7`) are
-      now rejected, because they clashed with recipe indexes in `retrieve`, `delete` and `edit`.
-      (Pull request [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63))
-    * Wrote tests for all of the above: `AddCommandTest`, `EditCommandTest`, `RecipeListTest`, `RecipeTest` and
-      new cases in the text UI test.
-
-* **Documentation**:
-    * User Guide:
-        * Wrote the sections for `add` and `edit`, including formats, rules, examples, expected output and errors.
-        * Added `add` and `edit` to the Command Summary.
-    * Developer Guide:
-        * Wrote the design subsection "Recipe input design" (responsibilities, design rules and efficiency) and the
-          implementation subsection "Recipe creation and editing: `add` and `edit`" (command flows, validation and
-          error handling, alternatives considered and automated verification).
-        * Added three UML diagrams: a class diagram of the classes involved, a sequence diagram for `add` and an
-          activity diagram for `edit`, and updated them to follow the course's UML notation
-          ([\#57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57)).
-        * Added user stories, non-functional requirements, glossary terms and manual testing instructions for `add`
-          and `edit`.
+* **Contributions to the DG**:
+    * Wrote the design subsection "Recipe input design" and the implementation subsection "Recipe creation and
+      editing: `add` and `edit`" (flow, validation, alternatives considered and automated tests).
+    * Added three UML diagrams: a class diagram of the recipe input classes, a sequence diagram for `add` and an
+      activity diagram for `edit` ([\#57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57),
+      updated in [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)).
+    * Added the user stories, non-functional requirements, glossary terms and manual testing instructions for
+      `add` and `edit`.
 
 * **Contributions to team-based tasks**:
-    * Wrote the User Guide's introduction and "Notes about the command format", replacing the template placeholders.
-
-* **Project management**:
-    * Planned and tracked my v1.0, v2.0 and v2.1 work with issues and milestones
+    * Planned and tracked my work with issues and milestones from v1.0 to v2.1
       ([\#19](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/19),
       [\#32](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/32),
       [\#33](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/33),
       [\#61](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/61),
       [\#62](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/62)).
-    * Merged teammates' pull requests after review, e.g.
-      [\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39),
+    * Merged teammates' PRs after review
+      ([\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39),
       [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50),
-      [\#53](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/53) and
-      [\#56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56).
+      [\#53](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/53),
+      [\#56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56)).
 
-* **Community**:
-    * Reviewed teammates' pull requests, with non-trivial review comments on
+* **Review/mentoring contributions**:
+    * Reviewed teammates' PRs with comments on
       [\#18](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/18),
       [\#36](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/36),
       [\#39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39) and
-      [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50) (Developer Guide review: figure numbering,
-      a broken author link and a mismatch with the User Guide), and approvals on
+      [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50) (DG review), and approved
       [\#2](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/2),
       [\#3](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/3),
       [\#25](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/25) and
       [\#30](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/30).
+
+* **Contributions beyond the project team**:
+    * Reviewed another team's Developer Guide (CS2113-W10-4, Jaweeper):
+      [tp\#4](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/4).
+    * Gave code review comments on classmates' iPs:
+      [ip\#52](https://github.com/NUS-CS2113-AY2627-S1/ip/pull/52),
+      [ip\#97](https://github.com/NUS-CS2113-AY2627-S1/ip/pull/97).
