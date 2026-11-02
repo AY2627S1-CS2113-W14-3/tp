@@ -495,8 +495,6 @@ and deleting it does not affect your recipes.
 
 ## Command Summary
 
-{Give a 'cheat sheet' of commands here}
-
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
 * Edit a recipe `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]` or `edit RECIPE_NAME ...`
 * Search recipes `search f/{name/ingredient}/{KEYWORD}`
