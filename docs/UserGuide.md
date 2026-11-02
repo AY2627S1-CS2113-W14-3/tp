@@ -90,6 +90,75 @@ ____________________________________________________________
 
 > **Caution:** Unlike some other commands, the parts of `add` must be typed in order. For example, `add toast n/Serve hot st/Toast bread` is rejected because the note is not last.
 
+### Viewing all recipes: `view`
+
+Lists every recipe in the order it was added, showing each one's number, title, type and serving size.
+
+Format: `view`
+
+* Any text typed after `view` is ignored.
+* The number before each recipe is the `INDEX` used by `retrieve`, `edit` and `delete`.
+
+Example output:
+
+```
+____________________________________________________________
+1. Egg Fried Rice (dinner, serves 1)
+2. Pancakes (breakfast, serves 1)
+____________________________________________________________
+```
+
+If no recipes have been added yet, this prints `No recipes found.` instead.
+
+### Retrieving a recipe: `retrieve`
+
+Displays a recipe's title, type, serving size, ingredients, steps and optional note.
+Matching ingredient names also produce the possible-allergen warning described below.
+
+Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
+
+* `INDEX` is the positive, 1-based number shown by `view`.
+* Alternatively, use the complete recipe name; matching ignores letter case.
+* The same allergen check applies to both forms, including recipes loaded from a previous session.
+
+Examples: `retrieve 1` or `retrieve egg taco`.
+
+Expected output for `retrieve egg taco`:
+
+```text
+____________________________________________________________
+egg taco (snack, serves 1)
+Ingredients:
+  1. 3 eggs
+  2. 5 tortillas
+Steps:
+  1. Scramble egg
+  2. Put egg in tortilla
+____________________________________________________________
+Possible allergens: eggs. Check ingredient labels.
+____________________________________________________________
+```
+
+### Searching for recipes: `search`
+Searches recipes using one or more filters for the recipe name and/or its ingredients.
+
+Format: `search f/{name/ingredient}/{KEYWORD} [f/{name/ingredient}/{KEYWORD} ...]`
+
+* Use `f/name/KEYWORD` to match `KEYWORD` against a recipe name.
+* Use `f/ingredient/KEYWORD` to match `KEYWORD` against an ingredient name.
+* Matching is case-insensitive and compares the complete name or ingredient text.
+* Multiple filters are combined with AND logic: a recipe must satisfy every filter.
+* Separate filters with spaces. Extra spaces before, between, or after filters are allowed.
+* The filter type and keyword are required. The filter must be either `name` or `ingredient`.
+
+Examples:
+
+* `search f/name/Omelette` finds the recipe whose name is `Omelette`, ignoring letter case.
+* `search f/ingredient/chicken` finds recipes with an ingredient named `chicken`, ignoring letter case.
+* `search f/name/Chicken f/ingredient/chicken` finds recipes whose name is `Chicken` and which contain an ingredient named `chicken`.
+
+Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
+
 ### Editing a recipe: `edit`
 
 Changes the title, type, note, one ingredient and/or one step of an existing recipe. The serving size stays the same.
@@ -140,34 +209,75 @@ Possible errors:
 * `edit waffles type/main` when there is no recipe called `waffles`: `Error: Recipe not found: waffles`
 * `edit 1` or `edit egg taco`: an error showing the correct format.
 
-### Retrieving a recipe: `retrieve`
+### Modifying a recipe: `modify`
 
-Displays a recipe's title, type, serving size, ingredients, steps and optional note.
-Matching ingredient names also produce the possible-allergen warning described below.
+Changes the serving size of an existing recipe and automatically scales all ingredient quantities proportionally.
 
-Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
+Format: `modify RECIPE_NAME s/NEW_SERVING_SIZE`
 
-* `INDEX` is the positive, 1-based number shown by `view`.
-* Alternatively, use the complete recipe name; matching ignores letter case.
-* The same allergen check applies to both forms, including recipes loaded from a previous session.
+* `RECIPE_NAME` must be the full name of an existing recipe. Matching is case-insensitive;
+  for example, `Egg Taco` and `egg taco` refer to the same recipe.
+* Recipe names may contain spaces. The `s/` prefix marks the beginning of the new serving-size parameter.
+* `NEW_SERVING_SIZE` must be a positive integer, such as `1`, `2`, or `3`.
+  Zero, negative numbers, decimal numbers, and non-numeric values are not accepted.
+* Each ingredient quantity is multiplied by **new serving size ÷ current serving size**.
+* Ingredient names and measurement units remain unchanged.
+* Scaled quantities with a finite decimal expansion are displayed in full, without unnecessary trailing zeroes.
+  For example, `0.375` remains `0.375`, while `1.500` is displayed as `1.5` and `2.000` as `2`.
+* Scaled quantities with an infinite recurring decimal expansion are rounded to at most two decimal places for display.
+  For example, `1 ÷ 3` is displayed as `0.33`.
+* Rounding affects only the displayed values. The application stores exact ingredient quantities internally,
+  so rounding for display does not affect subsequent calculations **within the current session**.
+  Saving and restarting stores/reloads decimal approximations, so exact fraction round trips are not
+  guaranteed across restarts.
+* If the new serving size is the same as the current serving size, no changes are made.
 
-Examples: `retrieve 1` or `retrieve egg taco`.
+Examples:
 
-Expected output for `retrieve egg taco`:
+Each example below starts with an `Egg Taco` recipe that serves **2** and contains **2 eggs**, **4 tortillas**,
+and **100 g cheese**.
 
-```text
-____________________________________________________________
-egg taco (snack, serves 1)
-Ingredients:
-  1. 3 eggs
-  2. 5 tortillas
-Steps:
-  1. Scramble egg
-  2. Put egg in tortilla
-____________________________________________________________
-Possible allergens: eggs. Check ingredient labels.
-____________________________________________________________
-```
+* `modify Egg Taco s/4`
+
+  Changes the serving size from 2 to 4 and doubles all ingredient quantities.
+
+  Expected output:
+
+  ```text
+  Serving size of Egg Taco has been updated from 2 to 4.
+  Updated ingredients:
+  1. 4 eggs
+  2. 8 tortillas
+  3. 200 g cheese
+  ```
+
+* `modify Egg Taco s/2`
+
+  Keeps the recipe unchanged because it already serves 2.
+
+  Expected output:
+
+  ```text
+  Egg Taco already has a serving size of 2. No changes were made.
+  ```
+
+Possible errors:
+
+* Recipe not found: `modify Unknown Recipe s/4`
+
+  Expected output:
+
+  ```text
+  Error: Recipe "Unknown Recipe" could not be found.
+  ```
+
+* Invalid serving size: `modify Egg Taco s/zero`
+
+  Expected output:
+
+  ```text
+  Error: Serving size must be a positive integer.
+  ```
 
 ### Deleting a recipe: `delete`
 
@@ -188,43 +298,6 @@ Expected output for `delete egg taco`:
 ```text
 Deleted: egg taco (snack, serves 1)
 ```
-
-### Managing home stock: `stock`
-
-Tracks the ingredients you currently have at home so you know what you can cook. You can add items you bought, remove items you used, and view your current inventory. The stock feature automatically ignores plural forms (e.g., `egg` and `eggs` are treated as the same item) and allows you to track expiry dates.
-
-Format: `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
-
-* `stock add`: Adds the specified ingredient to your stock. If the ingredient (with the exact same expiry date) already exists, the quantities are summed.
-* `stock remove`: Subtracts the specified quantity from your stock. The system **prioritizes removing items that are expiring soonest**. If the quantity reaches zero, the item is removed.
-* `stock list`: Displays all ingredients currently in your stock, highlighting expired or soon-to-expire items.
-* **Ingredient Format**: Must follow the same format as recipe ingredients: `QUANTITY [UNIT] NAME` (e.g., `3 eggs`, `200g chicken`).
-* **Expiry Date (`by/`)**: An optional parameter for `add`. Must be in `YYYY-MM-DD` format.
-
-Examples:
-* `stock add 3 eggs` adds 3 eggs to your stock without an expiry date.
-* `stock add 200g chicken by/2026-10-31` adds 200 grams of chicken that expires on Oct 31, 2026.
-* `stock list` shows your current inventory.
-
-Expected output for `stock list` (showing expiry tags):
-
-```text
-____________________________________________________________
-Current Home Stock:
-- 3 eggs
-- 200 g chicken (Expires: 2026-10-31)
-- 2 milk (Expires: 2026-10-20) [EXPIRING SOON]
-- 1 cheese (Expires: 2026-10-01) [EXPIRED]
-____________________________________________________________
-```
-
-Expected output for `stock remove 5 eggs` (insufficient quantity):
-
-```text
-Error: Not enough eggs in stock. You only have 3.0
-```
-
-> **Caution:** The stock feature does not do unit conversions. If you add `1 kg chicken` and try to remove `500 g chicken`, the command will fail because the units (`kg` and `g`) do not match.
 
 ### Built-in allergen warnings
 
@@ -334,115 +407,42 @@ For a recipe without supported names, the output says
 `No built-in suggestions for the recorded ingredient names.` and still shows the caution.
 `substitute` without a title reports usage; `substitute Missing` reports `Recipe not found: Missing`.
 
-### Searching for recipes: `search`
-Searches recipes using one or more filters for the recipe name and/or its ingredients.
+### Managing home stock: `stock`
 
-Format: `search f/{name/ingredient}/{KEYWORD} [f/{name/ingredient}/{KEYWORD} ...]`
+Tracks the ingredients you currently have at home so you know what you can cook. You can add items you bought, remove items you used, and view your current inventory. The stock feature automatically ignores plural forms (e.g., `egg` and `eggs` are treated as the same item) and allows you to track expiry dates.
 
-* Use `f/name/KEYWORD` to match `KEYWORD` against a recipe name.
-* Use `f/ingredient/KEYWORD` to match `KEYWORD` against an ingredient name.
-* Matching is case-insensitive and compares the complete name or ingredient text.
-* Multiple filters are combined with AND logic: a recipe must satisfy every filter.
-* Separate filters with spaces. Extra spaces before, between, or after filters are allowed.
-* The filter type and keyword are required. The filter must be either `name` or `ingredient`.
+Format: `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
+
+* `stock add`: Adds the specified ingredient to your stock. If the ingredient (with the exact same expiry date) already exists, the quantities are summed.
+* `stock remove`: Subtracts the specified quantity from your stock. The system **prioritizes removing items that are expiring soonest**. If the quantity reaches zero, the item is removed.
+* `stock list`: Displays all ingredients currently in your stock, highlighting expired or soon-to-expire items.
+* **Ingredient Format**: Must follow the same format as recipe ingredients: `QUANTITY [UNIT] NAME` (e.g., `3 eggs`, `200g chicken`).
+* **Expiry Date (`by/`)**: An optional parameter for `add`. Must be in `YYYY-MM-DD` format.
 
 Examples:
+* `stock add 3 eggs` adds 3 eggs to your stock without an expiry date.
+* `stock add 200g chicken by/2026-10-31` adds 200 grams of chicken that expires on Oct 31, 2026.
+* `stock list` shows your current inventory.
 
-* `search f/name/Omelette` finds the recipe whose name is `Omelette`, ignoring letter case.
-* `search f/ingredient/chicken` finds recipes with an ingredient named `chicken`, ignoring letter case.
-* `search f/name/Chicken f/ingredient/chicken` finds recipes whose name is `Chicken` and which contain an ingredient named `chicken`.
+Expected output for `stock list` (showing expiry tags):
 
-Invalid examples such as `search chicken`, `search f/type/chicken`, or `search f/name/` are rejected.
-
-### Viewing all recipes: `view`
-
-Lists every recipe in the order it was added, showing each one's number, title, type and serving size.
-
-Format: `view`
-
-* Any text typed after `view` is ignored.
-* The number before each recipe is the `INDEX` used by `retrieve`, `edit` and `delete`.
-
-Example output:
-
-```
+```text
 ____________________________________________________________
-1. Egg Fried Rice (dinner, serves 1)
-2. Pancakes (breakfast, serves 1)
+Current Home Stock:
+- 3 eggs
+- 200 g chicken (Expires: 2026-10-31)
+- 2 milk (Expires: 2026-10-20) [EXPIRING SOON]
+- 1 cheese (Expires: 2026-10-01) [EXPIRED]
 ____________________________________________________________
 ```
 
-If no recipes have been added yet, this prints `No recipes found.` instead.
+Expected output for `stock remove 5 eggs` (insufficient quantity):
 
-### Modifying a recipe: `modify`
+```text
+Error: Not enough eggs in stock. You only have 3.0
+```
 
-Changes the serving size of an existing recipe and automatically scales all ingredient quantities proportionally.
-
-Format: `modify RECIPE_NAME s/NEW_SERVING_SIZE`
-
-* `RECIPE_NAME` must be the full name of an existing recipe. Matching is case-insensitive;
-  for example, `Egg Taco` and `egg taco` refer to the same recipe.
-* Recipe names may contain spaces. The `s/` prefix marks the beginning of the new serving-size parameter.
-* `NEW_SERVING_SIZE` must be a positive integer, such as `1`, `2`, or `3`.
-  Zero, negative numbers, decimal numbers, and non-numeric values are not accepted.
-* Each ingredient quantity is multiplied by **new serving size ÷ current serving size**.
-* Ingredient names and measurement units remain unchanged.
-* Scaled quantities with a finite decimal expansion are displayed in full, without unnecessary trailing zeroes.
-  For example, `0.375` remains `0.375`, while `1.500` is displayed as `1.5` and `2.000` as `2`.
-* Scaled quantities with an infinite recurring decimal expansion are rounded to at most two decimal places for display.
-  For example, `1 ÷ 3` is displayed as `0.33`.
-* Rounding affects only the displayed values. The application stores exact ingredient quantities internally,
-  so rounding for display does not affect subsequent calculations **within the current session**.
-  Saving and restarting stores/reloads decimal approximations, so exact fraction round trips are not
-  guaranteed across restarts.
-* If the new serving size is the same as the current serving size, no changes are made.
-
-Examples:
-
-Each example below starts with an `Egg Taco` recipe that serves **2** and contains **2 eggs**, **4 tortillas**,
-and **100 g cheese**.
-
-* `modify Egg Taco s/4`
-
-  Changes the serving size from 2 to 4 and doubles all ingredient quantities.
-
-  Expected output:
-
-  ```text
-  Serving size of Egg Taco has been updated from 2 to 4.
-  Updated ingredients:
-  1. 4 eggs
-  2. 8 tortillas
-  3. 200 g cheese
-  ```
-
-* `modify Egg Taco s/2`
-
-  Keeps the recipe unchanged because it already serves 2.
-
-  Expected output:
-
-  ```text
-  Egg Taco already has a serving size of 2. No changes were made.
-  ```
-
-Possible errors:
-
-* Recipe not found: `modify Unknown Recipe s/4`
-
-  Expected output:
-
-  ```text
-  Error: Recipe "Unknown Recipe" could not be found.
-  ```
-
-* Invalid serving size: `modify Egg Taco s/zero`
-
-  Expected output:
-
-  ```text
-  Error: Serving size must be a positive integer.
-  ```
+> **Caution:** The stock feature does not do unit conversions. If you add `1 kg chicken` and try to remove `500 g chicken`, the command will fail because the units (`kg` and `g`) do not match.
 
 ### Exiting the program: `bye`
 
@@ -498,12 +498,12 @@ and deleting it does not affect your recipes.
 {Give a 'cheat sheet' of commands here}
 
 * Add a recipe `add TITLE[, TYPE] [s/SERVINGS] [i/INGREDIENT, INGREDIENT...] [st/STEP]... [n/NOTE]`
-* Edit a recipe `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]` or `edit RECIPE_NAME ...`
-* Search recipes `search f/{name/ingredient}/{KEYWORD}`
 * View all recipes `view`
 * Retrieve a recipe and check possible allergens `retrieve INDEX` or `retrieve RECIPE_NAME`
+* Search recipes `search f/{name/ingredient}/{KEYWORD}`
+* Edit a recipe `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT] [st/NUMBER NEW_STEP]` or `edit RECIPE_NAME ...`
 * Modify serving size `modify RECIPE_NAME s/NEW_SERVING_SIZE`
-* View ingredient alternatives `substitute RECIPE_NAME`
 * Delete a recipe `delete INDEX` or `delete RECIPE_NAME`
+* View ingredient alternatives `substitute RECIPE_NAME`
 * Manage home stock `stock add INGREDIENT [by/YYYY-MM-DD]`, `stock remove INGREDIENT`, or `stock list`
 * Exit the program `bye` or `exit`
