@@ -167,6 +167,40 @@ quantities. There is no cached advice, allergy profile or new storage field. Adv
 loading, renaming or scaling a recipe therefore uses its current ingredients. The existing main loop
 still saves recipes after successful commands, including this read-only command.
 
+### Recipe input design
+
+*Section author: Lim Sin ([wunicorn21](https://github.com/wunicorn21)).*
+
+`add` and `edit` decide the order and meaning of their own arguments, while the rules for each kind of value
+(title, type, serving size, ingredient, step and note) live in one utility class, `RecipeInputParser`. Both
+commands therefore accept exactly the same values and show the same error messages.
+
+| Component | Responsibility |
+| --- | --- |
+| `Parser` | Recognizes `add` and `edit` and passes the remaining arguments to the matching command. |
+| `AddCommand` | Splits the line at its prefixes, rejects duplicate titles, builds the `Recipe` and adds it only after every part is valid. |
+| `EditCommand` | Finds the recipe by number or name, reads each prefix's value in any order, checks every new value, then applies all changes together. |
+| `RecipeInputParser` | Package-private utility class that cleans up and checks a title, type, serving size, ingredient, step or note, throwing `WhatsCookingException` with a user-facing message when a value is invalid. |
+| `RecipeList` | Keeps titles unique with `containsTitle` and finds a recipe by name with `getByName`, both ignoring case and extra spaces. |
+| `Recipe` | Stores the values; `setTitle`, `setType`, `setIngredient` and `setStep` support `edit`. |
+| `Ui` | Displays the confirmation and, after `add`, any possible-allergen warning. |
+
+![Class diagram of recipe creation and editing](diagrams/recipe-input-classes.svg)
+
+*Classes involved in `add` and `edit`. Only relevant members and relationships are shown;
+`~` indicates package-private access and underlined methods are static.*
+[PlantUML source](diagrams/recipe-input-classes.puml)
+
+Titles are compared in a normalized form (trimmed, repeated spaces reduced to one, letter case ignored), so
+`Egg Taco` and `egg taco` typed with two spaces are the same recipe. A title made only of digits is rejected, because commands
+such as `retrieve`, `delete` and `edit` read a whole number as a recipe index. A type must be one word of
+letters, optionally joined by hyphens; any longer description belongs in the note.
+
+**Efficiency.** For R recipes, `add` and `edit title/` compare the new title with each stored title once,
+taking O(R) time. `edit` scans its input for prefixes once, then finds the recipe in O(1) by number or O(R)
+by name. Recipe lists are small, so direct scans keep the code simple; a map from normalized title to recipe
+would make lookups O(1) but would have to be kept in sync with every rename, deletion and reload.
+
 ## Implementation
 
 ### Command execution: main loop and error handling
@@ -813,24 +847,10 @@ Assertions guard internal assumptions: `StockList` asserts that the incoming `In
 
 *Section author: Lim Sin ([wunicorn21](https://github.com/wunicorn21)).*
 
-`add` creates a recipe from one line of input, and `edit` changes the title, type or note of an existing
-recipe. In v2.0, `add` also rejects a title that another recipe already uses (ignoring case and surrounding
-spaces) and accepts an optional serving size with `s/`. Both commands accept the same kinds of values, so the
-rules for checking those values are kept in one shared class. The
-[User Guide](UserGuide.md#adding-a-recipe-add) describes the command syntax and output.
-
-#### Classes involved
-
-`AddCommand` and `EditCommand` decide the order and meaning of their arguments, while the shared checks for
-individual values (title, type, serving size, ingredients, steps and note) live in the utility class
-`RecipeInputParser`. This keeps both commands' error messages identical and avoids duplicated parsing code.
-`RecipeList.containsTitle` keeps titles unique, and `Recipe.setTitle` and `Recipe.setType` were added for `edit`.
-
-![Class diagram of recipe creation and editing](diagrams/recipe-input-classes.svg)
-
-*Classes involved in `add` and `edit`. Only relevant members and relationships are shown;
-`~` indicates package-private access and underlined methods are static.*
-[PlantUML source](diagrams/recipe-input-classes.puml)
+`add` creates a recipe from one line of input, and `edit` changes the title, type, note, one ingredient or one
+step of an existing recipe, chosen by its number or its full name. The classes involved are described in
+[Recipe input design](#recipe-input-design); the [User Guide](UserGuide.md#adding-a-recipe-add) describes
+the command syntax and output.
 
 #### Command flow: `add`
 
@@ -846,9 +866,10 @@ application's subsequent save are described in the text and omitted here.*
    ` n/`, then at the first ` st/`, then at ` i/`, then at ` s/`, and finally at the first comma to separate
    the title from the type. Each prefix includes its leading space, so text such as `wasabi/` inside an
    ingredient is not mistaken for a prefix.
-2. `RecipeInputParser.parseTitle` trims the title and rejects a blank one.
-3. `RecipeList.containsTitle` compares the title with every stored title, ignoring case and surrounding
-   spaces. A match throws a `WhatsCookingException` before any `Recipe` is created.
+2. `RecipeInputParser.parseTitle` trims the title, reduces repeated spaces inside it to one, and rejects a
+   blank or digits-only title. `parseType` accepts only one word of letters, optionally joined by hyphens.
+3. `RecipeList.containsTitle` compares the title with every stored title, ignoring case and extra spaces.
+   A match throws a `WhatsCookingException` before any `Recipe` is created.
 4. The command creates the `Recipe`, records the serving size with `setServingSize` (without scaling any
    quantity), and adds the ingredients and steps through `RecipeInputParser`.
 5. Only after every part is valid does it call `RecipeList.add`. It then shows the confirmation and any
@@ -856,8 +877,9 @@ application's subsequent save are described in the text and omitted here.*
 
 #### Command flow: `edit`
 
-The format is `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE]`. Unlike `add`, the parts may be
-given in any order. `EditCommand` records where each prefix starts, sorts those positions, and takes each
+The format is `edit INDEX [title/NEW_TITLE] [type/NEW_TYPE] [n/NEW_NOTE] [i/NUMBER NEW_INGREDIENT]
+[st/NUMBER NEW_STEP]`, where `INDEX` may also be the recipe's full name. Unlike `add`, the parts may be given in
+any order. `EditCommand` records where each prefix starts, sorts those positions, and takes each
 value as the text up to the next prefix or the end of the line.
 
 ![Activity diagram of the checks made by the edit command](diagrams/edit-recipe-activity.svg)
@@ -865,15 +887,38 @@ value as the text up to the next prefix or the end of the line.
 *The checks `edit` makes, in order. Every check finishes before any value is changed.*
 [PlantUML source](diagrams/edit-recipe-activity.puml)
 
-1. The recipe number is parsed as a positive whole number and resolved with `RecipeList.get`.
-2. The values for `title/`, `type/` and `n/` are found. A missing prefix leaves that field unchanged.
+1. The text before the first prefix chooses the recipe. If it looks like a whole number, it is parsed as a
+   positive recipe number and resolved with `RecipeList.get`; otherwise it is treated as a name and resolved
+   with `RecipeList.getByName`, which ignores case and extra spaces.
+2. The values for `title/`, `type/`, `n/`, `i/` and `st/` are found. A missing prefix leaves that part unchanged.
 3. Each new value is checked with `RecipeInputParser`. A new title must not belong to another recipe;
-   changing only the letter case of the recipe's own title is allowed.
-4. Only then are the new values applied with `setTitle`, `setType` and `setNote`, and the updated recipe
-   is displayed.
+   changing only the letter case of the recipe's own title is allowed. For `i/` and `st/`, the number must
+   name an existing ingredient or step, and the new text is checked with `parseIngredient` or `parseStep`,
+   the same methods `add` uses.
+4. Each valid change is queued instead of applied. Only after every check passes are the queued changes run
+   (`setTitle`, `setType`, `setNote`, `setIngredient`, `setStep`), and the updated recipe is displayed with
+   any replaced ingredient or step.
 
 Checking everything before changing anything means a rejected `edit` leaves the recipe exactly as it was.
 The prefix `type/` is used instead of `t/` because `t/` is reserved for a planned cooking-time field.
+
+#### Validation and error handling
+
+| Condition | Result |
+| --- | --- |
+| `add` or `edit title/` with a title another recipe already uses, ignoring case and extra spaces | A duplicate-title error; nothing is changed. |
+| A title that is blank or made only of digits | An error; digits-only titles would clash with recipe indexes. |
+| A type that is not one word of letters (optionally hyphen-joined), e.g. `lunch, extra` | An error suggesting the note (`n/`) for extra details. |
+| `s/` that is empty, not a positive whole number, too large, repeated or misplaced | A serving-size error; no recipe is added. |
+| `edit` with a recipe number that is invalid or too large, or a name that matches no recipe | An invalid-number or recipe-not-found error. |
+| `edit` with no prefix, a repeated prefix, or an empty value | A usage or empty-value error. |
+| `edit i/` or `st/` with a missing, invalid or out-of-range number, more than one ingredient, or invalid new text | An error naming the ingredient or step; nothing is changed. |
+
+User input errors are reported through `WhatsCookingException`, which the application loop catches and displays
+before reading the next command. Assertions check internal assumptions, such as non-null arguments from `Parser`
+and valid positions passed to `Recipe.setIngredient` and `Recipe.setStep`. Both commands log through `AppLogger`
+when a duplicate title is rejected and when a recipe is added or edited, so logs go to the log file rather than
+the console.
 
 #### Alternatives and limitations
 
@@ -882,13 +927,29 @@ The prefix `type/` is used instead of `t/` because `t/` is reserved for a planne
   users who type well, matches the other commands, and needs no stored state between inputs. Its cost is that
   long recipes produce long lines and the parts of `add` must be typed in order.
 * **Shared checks (current) or checks inside each command.** Keeping separate copies in `add` and `edit`
-  would let the two commands drift apart. The planned editing of ingredients and steps can reuse
-  `addIngredients` and `addSteps` directly.
-* **Selecting a recipe by number (current) or by title in `edit`.** A number is short and never ambiguous,
-  whereas a title can contain text that looks like a prefix.
-* **Limitations.** Extra spaces inside a title are significant, so `egg  taco` (two spaces) is not treated
-  as a duplicate of `egg taco`. `edit` cannot yet change ingredients, steps or remove a type; these are
-  planned for v2.0b.
+  would let the two commands drift apart. Editing ingredients and steps reuses the same `parseIngredient`
+  and `parseStep` methods that `add` uses.
+* **Queuing changes (current) or applying each change as soon as it is checked.** Applying immediately is
+  simpler, but a later invalid part would leave the recipe half-edited. Queuing keeps an `edit` all-or-nothing.
+* **Choosing a recipe by number or name (current), by number only, or with a separate `select` step.**
+  Accepting both matches `retrieve` and `delete` and lets users edit straight after a `search`. A separate
+  "select, then edit" mode was rejected because the app would have to remember a selected recipe between
+  commands, which the team avoided in favour of one-shot commands. A recipe whose name is only digits can
+  therefore be chosen by number only.
+* **Limitations.** `edit` replaces one ingredient and one step per command; it cannot yet add or remove
+  ingredients or steps, or remove a type.
+
+#### Automated verification
+
+* `AddCommandTest` covers titles, types, serving sizes, ingredients, steps and notes, prefix order, duplicate
+  titles with different case or spacing, digits-only titles and one-word types. Every rejected input is checked
+  to leave the list empty.
+* `EditCommandTest` covers choosing a recipe by number or name, changing each part in any order, replacing an
+  ingredient or step, and every rejected case, each checked to leave the recipes unchanged.
+* `RecipeListTest` and `RecipeTest` cover title matching with different case and spacing, and the display of a
+  recipe without a type.
+* `ModifyWorkflowTest` runs the CLI against `text-ui-test/EXPECTED.txt`, which includes a duplicate `add` and
+  successful and rejected `edit` commands, including editing by name and replacing an ingredient and a step.
 
 <a id="product-scope"></a>
 
@@ -1068,4 +1129,10 @@ Run these actions in order in an empty test folder, so no saved recipe has the s
 | `edit 1 title/egg wrap` | Allowed: only the letter case of the recipe's own title changes. |
 | `edit 9 type/main`, `edit 0 type/main` and `edit abc type/main` | Each is rejected; no recipe changes. |
 | `edit 1`, `edit 1 egg wrap` and `edit 1 type/` | Each is rejected with a format or empty-value error. |
+| `add Wrap, light lunch` and `add Wrap, lunch, extra` | Each is rejected: the type must be one word. |
+| `add egg   wrap` (three spaces between the words) | Error: a recipe called "egg wrap" already exists (extra spaces are ignored). |
+| `add 2026`, then `add 7-layer cake` | The first is rejected (a title cannot be only a number); the second is added. |
+| `edit 1 i/1 3 eggs st/1 Whisk well`, then `retrieve 1` | Ingredient 1 and step 1 are replaced; everything else is unchanged. |
+| `edit 1 i/9 1 egg` and `edit 1 st/1` | Each is rejected; recipe 1 is unchanged. |
+| `edit EGG   WRAP n/By name` (extra spaces), then `edit waffles n/x` | The first edits recipe 1 by its name; the second is rejected with "Recipe not found". |
 | `bye`, restart in the same folder, then `retrieve 1` | The edited title, type and note reappear after loading. |

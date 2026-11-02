@@ -57,8 +57,8 @@ public class RecipeList {
     }
 
     /**
-     * Returns the first recipe whose title matches the given name,
-     * case-insensitively.
+     * Returns the first recipe whose title matches the given name, ignoring case
+     * and extra spaces.
      *
      * @param name the recipe title to search for
      * @return the matching recipe
@@ -66,9 +66,9 @@ public class RecipeList {
      */
     public Recipe getByName(String name) throws WhatsCookingException {
         assert name != null : "Name should not be null";
-        String target = name.trim();
+        String target = normalizeTitle(name);
         for (Recipe recipe : recipes) {
-            if (recipe.getTitle().trim().equalsIgnoreCase(target)) {
+            if (normalizeTitle(recipe.getTitle()).equalsIgnoreCase(target)) {
                 return recipe;
             }
         }
@@ -116,21 +116,26 @@ public class RecipeList {
     }
 
     /**
-     * Returns whether any recipe already uses the given title, ignoring case
-     * and surrounding spaces.
+     * Returns whether any recipe already uses the given title, ignoring case,
+     * surrounding spaces and repeated spaces inside the title.
      *
      * @param title the title to look for
      * @return true if a recipe with that title exists
      */
     public boolean containsTitle(String title) {
         assert title != null : "Title should not be null";
-        String target = title.trim();
+        String target = normalizeTitle(title);
         for (Recipe recipe : recipes) {
-            if (recipe.getTitle().trim().equalsIgnoreCase(target)) {
+            if (normalizeTitle(recipe.getTitle()).equalsIgnoreCase(target)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /** Returns the title trimmed, with each run of spaces inside it reduced to one space. */
+    private static String normalizeTitle(String title) {
+        return title.trim().replaceAll("\\s+", " ");
     }
 
     public int size() {

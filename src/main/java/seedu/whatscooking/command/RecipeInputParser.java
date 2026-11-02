@@ -21,9 +21,13 @@ final class RecipeInputParser {
     static final String INGREDIENT_PREFIX = " i/";
     static final String STEP_PREFIX = " st/";
     static final String NOTE_PREFIX = " n/";
-
+    static final String MESSAGE_NUMBER_TITLE = "A recipe title cannot be only a number, because numbers are used "
+            + "as recipe indexes. e.g. 7-layer cake";
     static final String MESSAGE_EMPTY_TITLE = "A recipe title cannot be empty. e.g. egg taco";
+
     static final String MESSAGE_EMPTY_TYPE = "The type cannot be empty. e.g. snack";
+    static final String MESSAGE_INVALID_TYPE = "The type must be one word made of letters, "
+            + "optionally joined by hyphens, e.g. snack or air-fryer. Put any other details in the note (n/).";
     static final String MESSAGE_INVALID_SERVINGS = "Serving size (s/) must be a positive whole number. e.g. s/2";
     static final String MESSAGE_WRONG_INGREDIENTS =
             "Wrong format! Ingredients require "
@@ -36,39 +40,50 @@ final class RecipeInputParser {
 
     private static final Logger logger = AppLogger.getLogger(RecipeInputParser.class);
     private static final String WHOLE_NUMBER_PATTERN = "[0-9]+";
+    private static final String TYPE_PATTERN = "[A-Za-z]+(-[A-Za-z]+)*";
+    private static final String DIGITS_ONLY_PATTERN = "[0-9]+";
+    private static final String WHITESPACE_PATTERN = "\\s+";
 
     private RecipeInputParser() {
         // Utility class: all methods are static.
     }
 
     /**
-     * Returns the trimmed title.
+     * Returns the title with surrounding spaces removed and repeated spaces inside it
+     * reduced to one, so that "egg  taco" and "egg taco" are treated as the same title.
      *
      * @param text the title as typed
-     * @return the trimmed title
-     * @throws WhatsCookingException if the title is blank
+     * @return the cleaned-up title
+     * @throws WhatsCookingException if the title is blank or made only of digits, which would clash
+     *     with recipe indexes in commands such as {@code edit 3}
      */
     static String parseTitle(String text) throws WhatsCookingException {
         assert text != null : "Callers should pass \"\" rather than null";
-        String title = text.trim();
+        String title = text.trim().replaceAll(WHITESPACE_PATTERN, " ");
         if (title.isEmpty()) {
             throw new WhatsCookingException(MESSAGE_EMPTY_TITLE);
+        }
+        if (title.matches(DIGITS_ONLY_PATTERN)) {
+            throw new WhatsCookingException(MESSAGE_NUMBER_TITLE);
         }
         return title;
     }
 
     /**
-     * Returns the trimmed type.
+     * Returns the trimmed type, which must be a single word such as "snack" or "air-fryer".
      *
      * @param text the type as typed
      * @return the trimmed type
-     * @throws WhatsCookingException if the type is blank
+     * @throws WhatsCookingException if the type is blank or is not a single word
      */
     static String parseType(String text) throws WhatsCookingException {
         assert text != null : "Callers should pass \"\" rather than null";
         String type = text.trim();
         if (type.isEmpty()) {
             throw new WhatsCookingException(MESSAGE_EMPTY_TYPE);
+        }
+        if (!type.matches(TYPE_PATTERN)) {
+            throw new WhatsCookingException(MESSAGE_INVALID_TYPE);
         }
         return type;
     }
@@ -116,18 +131,30 @@ final class RecipeInputParser {
         }
 
         for (String ingredient : ingredientText.split(",")) {
-            String trimmed = ingredient.trim();
-            if (trimmed.isEmpty()) {
-                throw new WhatsCookingException(MESSAGE_WRONG_INGREDIENTS);
-            }
-            try {
-                recipe.addIngredient(new Ingredient(trimmed));
-            } catch (IllegalArgumentException e) {
-                //Name the bad ingredient and pass on Ingredient's specific reason (e.g. unsupported unit)
-                logger.log(Level.INFO, "Rejected bad ingredient \"{0}\"", trimmed);
-                throw new WhatsCookingException("Invalid ingredient \"" + trimmed + "\": " + e.getMessage()
-                        + System.lineSeparator() + MESSAGE_WRONG_INGREDIENTS);
-            }
+            recipe.addIngredient(parseIngredient(ingredient));
+        }
+    }
+
+    /**
+     * Converts one ingredient description, e.g. "3 eggs" or "200 g cheese", into an {@link Ingredient}.
+     *
+     * @param text one ingredient as typed
+     * @return the parsed ingredient
+     * @throws WhatsCookingException if the ingredient is empty or malformed
+     */
+    static Ingredient parseIngredient(String text) throws WhatsCookingException {
+        assert text != null : "Callers should pass \"\" rather than null";
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) {
+            throw new WhatsCookingException(MESSAGE_WRONG_INGREDIENTS);
+        }
+        try {
+            return new Ingredient(trimmed);
+        } catch (IllegalArgumentException e) {
+            //Name the bad ingredient and pass on Ingredient's specific reason (e.g. unsupported unit)
+            logger.log(Level.INFO, "Rejected bad ingredient \"{0}\"", trimmed);
+            throw new WhatsCookingException("Invalid ingredient \"" + trimmed + "\": " + e.getMessage()
+                    + System.lineSeparator() + MESSAGE_WRONG_INGREDIENTS);
         }
     }
 
@@ -148,11 +175,7 @@ final class RecipeInputParser {
         boolean hasMoreSteps = true;
         while (hasMoreSteps) {
             String[] parts = remaining.split(STEP_PREFIX, 2);
-            String step = parts[0].trim();
-            if (step.isEmpty()) {
-                throw new WhatsCookingException(MESSAGE_EMPTY_STEP);
-            }
-            recipe.addStep(step);
+            recipe.addStep(parseStep(parts[0]));
 
             if (parts.length > 1) {
                 remaining = parts[1];
@@ -160,6 +183,22 @@ final class RecipeInputParser {
                 hasMoreSteps = false;
             }
         }
+    }
+
+    /**
+     * Returns the trimmed step.
+     *
+     * @param text the step as typed
+     * @return the trimmed step
+     * @throws WhatsCookingException if the step is blank
+     */
+    static String parseStep(String text) throws WhatsCookingException {
+        assert text != null : "Callers should pass \"\" rather than null";
+        String step = text.trim();
+        if (step.isEmpty()) {
+            throw new WhatsCookingException(MESSAGE_EMPTY_STEP);
+        }
+        return step;
     }
 
     /**

@@ -2,6 +2,7 @@ package seedu.whatscooking.recipe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,5 +47,21 @@ class RecipeListTest {
         assertTrue(recipes.containsTitle("egg taco"));
         assertTrue(recipes.containsTitle("  EGG TACO "));
         assertFalse(recipes.containsTitle("egg"));
+    }
+
+    @Test
+    public void containsTitle_ignoresRepeatedSpacesInsideTitle() {
+        RecipeList recipes = new RecipeList();
+        recipes.add(new Recipe("Egg  Taco", "snack"));
+        assertTrue(recipes.containsTitle("egg taco"));
+        assertTrue(recipes.containsTitle("EGG    TACO"));
+    }
+
+    @Test
+    public void getByName_ignoresCaseAndExtraSpaces() throws WhatsCookingException {
+        RecipeList recipes = new RecipeList();
+        Recipe recipe = new Recipe("Egg Taco", "snack");
+        recipes.add(recipe);
+        assertSame(recipe, recipes.getByName("  egg   TACO "));
     }
 }
