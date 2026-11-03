@@ -7,7 +7,7 @@
   The application's English keyword dictionary is limited and maintained in this repository; it is not an official detection algorithm.
 * UML rendering: [PlantUML](https://plantuml.com/). Editable sources are included alongside the diagrams.
 * AI assistance: Lim Sin ([wunicorn21](https://github.com/wunicorn21)) used Claude (Anthropic) to help plan and
-  draft the v2.0 `add` improvements, the `edit` command, `RecipeInputParser`, their tests, and the related
+  draft the v2.0 `add` improvements, the v2.0 and v2.1 `edit` command, `RecipeInputParser`, their tests, and the related
   User Guide and Developer Guide sections and diagrams. All generated work was reviewed, tested and adjusted by
   Lim Sin.
 * AI assistance: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)) used Claude (Anthropic) to help draft
@@ -104,7 +104,7 @@ This keeps the resizing rules available to callers other than the CLI.
 | --- | --- |
 | `Parser` | Recognizes `modify` and passes the remaining arguments to `ModifyCommand`. |
 | `ModifyCommand` | Validates the name/size arguments, locates the recipe, handles an unchanged size and reports success or errors. |
-| `RecipeList` | Finds the first recipe whose full title matches, ignoring case and surrounding whitespace. |
+| `RecipeList` | Finds the first recipe whose full title matches, ignoring case and extra spaces. |
 | `Recipe` | Calculates and validates every new quantity before applying any changes. |
 | `Ingredient` | Keeps the immutable name and unit separate from the replaceable quantity; formats quantities for output. |
 | `IngredientQuantity` | Stores an exact fraction and returns new, reduced fractions when scaling. This class is package-private and immutable. |
@@ -270,12 +270,12 @@ replace input validation. Gradle `run` and tests enable them; when launching the
   `FINE` records, so logging only at `FINE` would also keep the console clean. It was rejected because any
   `WARNING` record would then appear in the user's output.
 * **Limitations.**
-  * If saving fails, for example because the data file is read-only, `bye` prints the goodbye message
-    followed by the save error, and the loop continues instead of exiting.
-  * `Ui.readCommand` expects another line of input. If input ends without `bye` (for example, after
-    Ctrl+D or at the end of a redirected input file), the application stops with a
-    `NoSuchElementException` instead of exiting cleanly.
-  * `whatscooking.log` is appended to on every run and never trimmed.
+    * If saving fails, for example because the data file is read-only, `bye` prints the goodbye message
+      followed by the save error, and the loop continues instead of exiting.
+    * `Ui.readCommand` expects another line of input. If input ends without `bye` (for example, after
+      Ctrl+D or at the end of a redirected input file), the application stops with a
+      `NoSuchElementException` instead of exiting cleanly.
+    * `whatscooking.log` is appended to on every run and never trimmed.
 
 #### Automated verification
 
@@ -385,14 +385,14 @@ A damaged file therefore never stops the application from starting.
 * **Rewriting the whole file (current) or appending changes.** Rewriting keeps the file identical to the
   in-memory list after deletes and edits, at the cost of writing every recipe each time.
 * **Limitations.**
-  * Quantities are saved as decimals and reloaded as `double`, so the exact fractions used by `modify`
-    (see [Serving-size modification](#serving-size-modification-modify)) are not preserved after a
-    restart.
-  * Only recipes are saved. Items added with `stock` are lost when the application exits.
-  * When a corrupted file is replaced with an empty list, the next successful command overwrites the
-    file. Copy the file before entering another command if its contents need to be recovered.
-  * Loading does not check for duplicate titles, so a hand-edited file can introduce two recipes that
-    `add` would have rejected.
+    * Quantities are saved as decimals and reloaded as `double`, so the exact fractions used by `modify`
+      (see [Serving-size modification](#serving-size-modification-modify)) are not preserved after a
+      restart.
+    * Only recipes are saved. Items added with `stock` are lost when the application exits.
+    * When a corrupted file is replaced with an empty list, the next successful command overwrites the
+      file. Copy the file before entering another command if its contents need to be recovered.
+    * Loading does not check for duplicate titles, so a hand-edited file can introduce two recipes that
+      `add` would have rejected.
 
 #### Automated verification
 
@@ -748,7 +748,7 @@ suggestion is pseudocode for constructing a value and adding it to the local lis
 
 1. `Parser` creates `SubstituteCommand` with the remaining input. An empty trimmed title produces a
    usage error; all other values are full titles, including numeric strings.
-2. `RecipeList.getByName` resolves the title ignoring case and surrounding whitespace. A missing or
+2. `RecipeList.getByName` resolves the title ignoring case and extra spaces. A missing or
    partial title throws before any advice is displayed.
 3. `SubstitutionAdvisor.suggest` visits the ingredients in recipe order. It lowercases each name
    with `Locale.ROOT`, strips surrounding whitespace, and collapses runs of whitespace or hyphens
@@ -894,7 +894,7 @@ value as the text up to the next prefix or the end of the line.
    with `RecipeList.getByName`, which ignores case and extra spaces.
 2. The values for `title/`, `type/`, `n/`, `i/` and `st/` are found. A missing prefix leaves that part unchanged.
 3. Each new value is checked with `RecipeInputParser`. A new title must not belong to another recipe;
-   changing only the letter case of the recipe's own title is allowed. For `i/` and `st/`, the number must
+   changing only the letter case or spacing of the recipe's own title is allowed. For `i/` and `st/`, the number must
    name an existing ingredient or step, and the new text is checked with `parseIngredient` or `parseStep`,
    the same methods `add` uses.
 4. Each valid change is queued instead of applied. Only after every check passes are the queued changes run
@@ -936,8 +936,11 @@ the console.
 * **Choosing a recipe by number or name (current), by number only, or with a separate `select` step.**
   Accepting both matches `retrieve` and `delete` and lets users edit straight after a `search`. A separate
   "select, then edit" mode was rejected because the app would have to remember a selected recipe between
-  commands, which the team avoided in favour of one-shot commands. A recipe whose name is only digits can
-  therefore be chosen by number only.
+  commands, which the team avoided in favour of one-shot commands. Because a whole number is always read as
+  a recipe number, v2.1 rejects digits-only titles in `add` and `edit title/`.
+* **Normalizing titles in `RecipeList` (current) or in each command.** v2.1 moved the "ignore case and extra
+  spaces" rule into `RecipeList.containsTitle` and `getByName`, so `retrieve`, `delete`, `modify`,
+  `substitute` and `edit` all match names the same way without each command cleaning up the name itself.
 * **Limitations.** `edit` replaces one ingredient and one step per command; it cannot yet add or remove
   ingredients or steps, or remove a type.
 
@@ -963,7 +966,7 @@ Home cooks who prefer a command-line interface for storing, finding and adjustin
 ### Value proposition
 
 Keep recipe details in a local collection, find them quickly, resize quantities for a different
-number of servings, and surface possible allergens named in the recorded ingredients, , and keep track of available ingredients to know what can be cooked right now.
+number of servings, and surface possible allergens named in the recorded ingredients, and keep track of available ingredients to know what can be cooked right now.
 
 <a id="user-stories"></a>
 
@@ -982,6 +985,11 @@ number of servings, and surface possible allergens named in the recorded ingredi
 |v2.0|host|record how many people a recipe serves when I add it|scale it correctly with `modify` later|
 |v2.0|frequent cook|edit a recipe's title, type or note|keep my recipes up to date without deleting and re-adding them|
 |v2.0|home cook|view cooking alternatives for supported ingredients without changing my recipe|compare options before deciding how to adapt a dish|
+|v2.1|home cook|replace one ingredient of a recipe|fix a wrong quantity or name without retyping the whole recipe|
+|v2.1|home cook|replace one step of a recipe|correct or improve an instruction without deleting and re-adding the recipe|
+|v2.1|frequent cook|choose the recipe to edit by its name|edit it straight after `search` or `retrieve` without looking up its number|
+|v2.1|careless typist|have titles that differ only in letter case or extra spaces treated as the same|avoid near-duplicate recipes and still find a recipe when I mistype its spacing|
+|v2.1|new user|be told when a title is only a number or a type is more than one word|enter recipes that the other commands can find and display clearly|
 
 <a id="non-functional-requirements"></a>
 
@@ -993,7 +1001,8 @@ number of servings, and surface possible allergens named in the recorded ingredi
 * Detection must leave the recipe and its quantities unchanged and use a stable display order.
 * The feature must work with the existing plain-text save format and Java 25 application.
 * A rejected `add` or `edit` must leave the recipe list exactly as it was before the command.
-* Recipe titles must stay unique (ignoring case), including for recipes loaded from a previous session.
+* Recipe titles must stay unique (ignoring case and extra spaces), including for recipes loaded from a previous session.
+* Every command that takes a recipe name must match it the same way, ignoring letter case and extra spaces.
 * A missing, unreadable or corrupted data file must not stop the application from starting.
 * The data file must be plain text that a user can read and copy to another computer.
 * Log output must never appear in the console alongside the application's output.
@@ -1009,8 +1018,12 @@ number of servings, and surface possible allergens named in the recorded ingredi
 * *Derived result* - A value recalculated from current recipe data instead of stored independently.
 * *Stock* - The collection of ingredients the user currently has at home.
 * *Prefix* - The short marker before a part of a command, such as `s/`, `i/`, `st/`, `n/`, `title/` or `type/`.
-* *Duplicate title* - A title that matches an existing recipe's title when letter case and surrounding spaces
+* *Duplicate title* - A title that matches an existing recipe's title when letter case and extra spaces
   are ignored.
+* *Recipe index* - The number shown before a recipe in `view`, used by `retrieve`, `edit` and `delete` to choose
+  a recipe. A title made only of digits is not allowed, because it would look like an index.
+* *Normalized title* - A title with surrounding spaces removed and each run of spaces inside it reduced to one,
+  used when comparing and looking up titles.
 * *Command word* - The first word of a line of input, such as `add` or `view`, which selects the command to run.
 * *Data file* - The plain-text file `data/whatscooking.txt`, which holds the saved recipes.
 
@@ -1132,9 +1145,13 @@ Run these actions in order in an empty test folder, so no saved recipe has the s
 | `edit 9 type/main`, `edit 0 type/main` and `edit abc type/main` | Each is rejected; no recipe changes. |
 | `edit 1`, `edit 1 egg wrap` and `edit 1 type/` | Each is rejected with a format or empty-value error. |
 | `add Wrap, light lunch` and `add Wrap, lunch, extra` | Each is rejected: the type must be one word. |
-| `add egg   wrap` (three spaces between the words) | Error: a recipe called "egg wrap" already exists (extra spaces are ignored). |
+| `add egg wrap`, typed with three spaces between the words | Error: a recipe called "egg wrap" already exists (extra spaces are ignored). |
 | `add 2026`, then `add 7-layer cake` | The first is rejected (a title cannot be only a number); the second is added. |
+| `edit 1 title/2026` and `edit 1 type/light lunch` | Each is rejected; recipe 1 is unchanged. |
+| `add Toast`, then `view` | Toast is listed as `Toast (serves 1)`, with no empty type before the serving size. |
 | `edit 1 i/1 3 eggs st/1 Whisk well`, then `retrieve 1` | Ingredient 1 and step 1 are replaced; everything else is unchanged. |
 | `edit 1 i/9 1 egg` and `edit 1 st/1` | Each is rejected; recipe 1 is unchanged. |
-| `edit EGG   WRAP n/By name` (extra spaces), then `edit waffles n/x` | The first edits recipe 1 by its name; the second is rejected with "Recipe not found". |
+| `edit 1 i/1 2 eggs, 1 tomato` | Rejected: only one ingredient can be replaced at a time. Recipe 1 is unchanged. |
+| `retrieve egg wrap` and `modify egg wrap s/4`, each typed with three spaces between the words | Both find recipe 1, because name lookups ignore extra spaces. |
+| `edit EGG WRAP n/By name`, typed with three spaces between the words, then `edit waffles n/x` | The first edits recipe 1 by its name; the second is rejected with "Recipe not found". |
 | `bye`, restart in the same folder, then `retrieve 1` | The edited title, type and note reappear after loading. |

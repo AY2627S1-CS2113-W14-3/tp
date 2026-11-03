@@ -33,7 +33,7 @@ a command-line interface.
 > * Items in square brackets are optional, e.g. `add TITLE[, TYPE]` can be `add egg taco` or `add egg taco, snack`.
 > * Items followed by `...` can be given more than once, e.g. `[st/STEP]...` can be `st/Whisk st/Fry`.
 > * A prefix such as `s/`, `i/`, `st/` or `n/` starts a new part of a command and must follow a space.
-> * Command words are case-sensitive: type `add`, not `Add`. Recipe names are matched ignoring letter case.
+> * Command words are case-sensitive: type `add`, not `Add`. Recipe names are matched ignoring letter case and extra spaces.
 > * `INDEX` is a recipe's number as shown by `view`. It must be a positive whole number.
 
 ### Adding a recipe: `add`
@@ -98,7 +98,7 @@ Matching ingredient names also produce the possible-allergen warning described b
 Format: `retrieve INDEX` or `retrieve RECIPE_NAME`
 
 * `INDEX` is the positive, 1-based number shown by `view`.
-* Alternatively, use the complete recipe name; matching ignores letter case.
+* Alternatively, use the complete recipe name; matching ignores letter case and extra spaces.
 * The same allergen check applies to both forms, including recipes loaded from a previous session.
 
 Examples: `retrieve 1` or `retrieve egg taco`.
@@ -126,7 +126,7 @@ Removes a recipe from your recipe list permanently.
 Format: `delete INDEX` or `delete RECIPE_NAME`
 
 * `INDEX` is the positive, 1-based number shown by the `view` command.
-* Alternatively, use the complete recipe name. Matching is case-insensitive.
+* Alternatively, use the complete recipe name. Matching ignores letter case and extra spaces.
 * You cannot delete a recipe that does not exist.
 
 Examples:
@@ -229,7 +229,7 @@ Shows possible alternatives for supported ingredients in an existing recipe.
 
 Format: `substitute RECIPE_NAME`
 
-* Use the **full recipe title**, ignoring case and surrounding whitespace. This command does not
+* Use the **full recipe title**, ignoring case and extra spaces. This command does not
   accept a recipe index; a numeric value is interpreted as a literal recipe title.
 * Suggestions refer to the ingredient numbers shown by `retrieve`, in the same order. Unsupported
   ingredients are omitted; repeated ingredients retain their own numbers.
@@ -312,6 +312,7 @@ Format: `view`
 
 * Any text typed after `view` is ignored.
 * The number before each recipe is the `INDEX` used by `retrieve`, `edit` and `delete`.
+* A recipe added without a type shows only its serving size, e.g. `3. Toast (serves 1)`.
 
 Example output:
 
@@ -337,7 +338,8 @@ or `edit RECIPE_NAME [title/NEW_TITLE] ...` (the same parts)
 * Give at least one part. The parts can be in any order, but each only once.
 * The new values replace the old ones and cannot be empty. A new type must be one word, as in [`add`](#adding-a-recipe-add).
 * The new title cannot be one that another recipe already uses (ignoring letter case and extra spaces).
-  Changing only the letter case of a recipe's own title, e.g. `egg taco` to `Egg Taco`, is allowed.
+  Changing only the letter case or spacing of a recipe's own title, e.g. `egg taco` to `Egg Taco`, is allowed.
+* A new title cannot be only a number, as in [`add`](#adding-a-recipe-add).
 * **Ingredient (`i/`)**: `NUMBER` is the ingredient's position as shown by `retrieve`. The new ingredient uses the
   same format as in `add`, e.g. `i/2 5 corn tortillas`. Only one ingredient can be replaced per command.
 * **Step (`st/`)**: `NUMBER` is the step's position as shown by `retrieve`, e.g. `st/1 Whisk the eggs`.
@@ -372,6 +374,9 @@ Possible errors:
 * `edit 3 i/5 1 tsp salt` when recipe 3 has 1 ingredient:
   `Error: Ingredient 5 does not exist; this recipe has 1 ingredient(s).`
 * `edit waffles type/main` when there is no recipe called `waffles`: `Error: Recipe not found: waffles`
+* `edit 1 title/2026`: `Error: A recipe title cannot be only a number, because numbers are used as recipe indexes. e.g. 7-layer cake`
+* `edit 1 type/light lunch`: an error saying the type must be one word, suggesting the note (`n/`) for extra details.
+* `edit 1 i/1 2 eggs, 1 tomato`: `Error: Only one ingredient can be replaced at a time, so i/ cannot contain a comma.`
 * `edit 1` or `edit egg taco`: an error showing the correct format.
 
 ### Modifying a recipe: `modify`
@@ -380,7 +385,7 @@ Changes the serving size of an existing recipe and automatically scales all ingr
 
 Format: `modify RECIPE_NAME s/NEW_SERVING_SIZE`
 
-* `RECIPE_NAME` must be the full name of an existing recipe. Matching is case-insensitive;
+* `RECIPE_NAME` must be the full name of an existing recipe. Matching ignores letter case and extra spaces;
   for example, `Egg Taco` and `egg taco` refer to the same recipe.
 * Recipe names may contain spaces. The `s/` prefix marks the beginning of the new serving-size parameter.
 * `NEW_SERVING_SIZE` must be a positive integer, such as `1`, `2`, or `3`.

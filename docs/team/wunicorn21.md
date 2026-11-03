@@ -66,6 +66,8 @@ allergens and keep track of the ingredients they have at home, all through a com
       [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50),
       [\#53](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/53),
       [\#56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56)).
+    * Updated the README, website landing page and About Us page (team photos, portfolio links), and
+      removed leftover template files ([\#65](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/65)).
 
 * **Review/mentoring contributions**:
     * Reviewed teammates' PRs with comments on
@@ -84,5 +86,3 @@ allergens and keep track of the ingredients they have at home, all through a com
     * Gave code review comments on classmates' iPs:
       [ip\#52](https://github.com/NUS-CS2113-AY2627-S1/ip/pull/52),
       [ip\#97](https://github.com/NUS-CS2113-AY2627-S1/ip/pull/97).
-    *     * Updated the README, website landing page and About Us page (team photos, portfolio links), and
-      removed leftover template files ([\#65](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/65)).
