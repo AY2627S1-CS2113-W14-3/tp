@@ -1,5 +1,25 @@
 # User Guide
 
+**Table of contents**
+
+* [Introduction](#introduction)
+* [Quick Start](#quick-start)
+* [Features](#features)
+  * [Adding a recipe: `add`](#adding-a-recipe-add)
+  * [Retrieving a recipe: `retrieve`](#retrieving-a-recipe-retrieve)
+  * [Deleting a recipe: `delete`](#deleting-a-recipe-delete)
+  * [Managing home stock: `stock`](#managing-home-stock-stock)
+  * [Built-in allergen warnings](#built-in-allergen-warnings)
+  * [Viewing ingredient alternatives: `substitute`](#viewing-ingredient-alternatives-substitute)
+  * [Searching for recipes: `search`](#searching-for-recipes-search)
+  * [Viewing all recipes: `view`](#viewing-all-recipes-view)
+  * [Editing a recipe: `edit`](#editing-a-recipe-edit)
+  * [Modifying a recipe: `modify`](#modifying-a-recipe-modify)
+  * [Exiting the program: `bye`](#exiting-the-program-bye)
+* [Saving the data](#saving-the-data)
+* [FAQ](#faq)
+* [Command Summary](#command-summary)
+
 ## Introduction
 
 What's Cooking is a recipe manager for home cooks who prefer typing to clicking. You can store recipes with

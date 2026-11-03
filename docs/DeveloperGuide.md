@@ -1,5 +1,40 @@
 # Developer Guide
 
+**Table of contents**
+
+* [Acknowledgements](#acknowledgements)
+* [Design](#design)
+    * [Architecture](#architecture)
+    * [Storage design](#storage-design)
+    * [Serving-size model](#serving-size-model)
+    * [Allergen checking design](#allergen-checking-design)
+    * [Ingredient substitution design](#ingredient-substitution-design)
+    * [Recipe input design](#recipe-input-design)
+* [Implementation](#implementation)
+    * [Command execution: main loop and error handling](#command-execution-main-loop-and-error-handling)
+    * [Recipe persistence: saving and loading](#recipe-persistence-saving-and-loading)
+    * [Listing recipes: `view`](#listing-recipes-view)
+    * [Serving-size modification: `modify`](#serving-size-modification-modify)
+    * [Recipe filtering: `search`](#recipe-filtering-search)
+    * [Built-in allergen checking (v2.0)](#built-in-allergen-checking-v20)
+    * [Ingredient alternatives: `substitute`](#ingredient-alternatives-substitute)
+    * [Stock management: `stock`](#stock-management-stock)
+    * [Recipe creation and editing: `add` and `edit`](#recipe-creation-and-editing-add-and-edit)
+* [Appendix A: Product Scope](#appendix-a-product-scope)
+    * [Target user profile](#target-user-profile)
+    * [Value proposition](#value-proposition)
+* [Appendix B: User Stories](#appendix-b-user-stories)
+* [Appendix C: Non-Functional Requirements](#appendix-c-non-functional-requirements)
+* [Appendix D: Glossary](#appendix-d-glossary)
+* [Appendix E: Instructions for Manual Testing](#appendix-e-instructions-for-manual-testing)
+    * [Serving-size modification](#serving-size-modification)
+    * [Allergen warnings](#allergen-warnings)
+    * [Substitution advice](#substitution-advice)
+    * [Viewing and saving recipes](#viewing-and-saving-recipes)
+    * [Retrieve and Delete](#retrieve-and-delete)
+    * [Stock management](#stock-management)
+    * [Adding and editing recipes](#adding-and-editing-recipes)
+
 ## Acknowledgements
 
 * Project structure: [CS2113 project template](https://github.com/NUS-CS2113-AY2627-S1/tp).
