@@ -1,6 +1,6 @@
-# What's Cooking
+# WhatsCooking
 
-What's Cooking is a command-line recipe manager for home cooks. Store recipes with their ingredients, steps
+WhatsCooking is a command-line recipe manager for home cooks. Store recipes with their ingredients, steps
 and notes, search them, scale them to a different number of servings, check possible allergens, and track
 the ingredients you have at home.
 
