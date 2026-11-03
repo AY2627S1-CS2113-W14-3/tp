@@ -2,7 +2,7 @@
 
 ## Overview
 
-What's Cooking is a desktop recipe manager for home cooks who prefer typing. Users store recipes with their
+WhatsCooking is a desktop recipe manager for home cooks who prefer typing. Users store recipes with their
 ingredients, steps and notes, find them quickly, resize them for a different number of servings, check possible
 allergens and keep track of the ingredients they have at home, all through a command-line interface.
 
@@ -16,7 +16,7 @@ allergens and keep track of the ingredients they have at home, all through a com
           steps and note, e.g. `add egg taco, snack s/2 i/3 eggs st/Scramble egg n/Serve hot`.
         * Justification: every recipe enters the app through `add`, so `retrieve`, `modify`, `search`, allergen
           warnings and saving all depend on it.
-        * Every part is checked before anything is saved, so an invalid command never leaves a
+        * Highlights: every part is checked before anything is saved, so an invalid command never leaves a
           half-built recipe; prefixes such as `i/` are not mistaken inside words like `wasabi/`; each error says
           what to fix.
     * **New feature: edit an existing recipe (`edit`).**
@@ -24,7 +24,7 @@ allergens and keep track of the ingredients they have at home, all through a com
           by number or full name, with parts in any order,
           e.g. `edit egg taco i/2 5 corn tortillas st/1 Whisk the eggs`.
         * Justification: users previously had to delete and re-add a recipe to fix a typo or update it.
-        * Every new value is checked first and the changes are applied only together, so a rejected
+        * Highlights: every new value is checked first and the changes are applied only together, so a rejected
           `edit` never half-changes a recipe. It reuses `add`'s checks, so both commands accept exactly the same
           values.
     * **Enhancements to existing features:**
@@ -42,17 +42,20 @@ allergens and keep track of the ingredients they have at home, all through a com
 
 * **Contributions to the UG**:
     * Wrote the `add` and `edit` sections (formats, rules, examples, expected output and errors) and their
-      Command Summary entries.
-    * Wrote the introduction and "Notes about the command format", replacing the template placeholders.
+      Command Summary entries. 
+    * Wrote the introduction, "Notes about the command format" and the table of contents, and updated the
+      name-matching rules in `retrieve`, `delete`, `modify` and `substitute` for v2.1
+      ([\#70](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/70)).
 
 * **Contributions to the DG**:
     * Wrote the design subsection "Recipe input design" and the implementation subsection "Recipe creation and
       editing: `add` and `edit`" (flow, validation, alternatives considered and automated tests).
     * Added three UML diagrams: a class diagram of the recipe input classes, a sequence diagram for `add` and an
       activity diagram for `edit` ([\#57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57),
-      updated in [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)).
+      updated in [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)). 
     * Added the user stories, non-functional requirements, glossary terms and manual testing instructions for
-      `add` and `edit`.
+      `add` and `edit` up to v2.1, and the DG's table of contents
+      ([\#70](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/70)).
 
 * **Contributions to team-based tasks**:
     * Planned and tracked my work with issues and milestones from v1.0 to v2.1
@@ -66,6 +69,8 @@ allergens and keep track of the ingredients they have at home, all through a com
       [\#50](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/50),
       [\#53](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/53),
       [\#56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56)).
+    * Updated the README, website landing page and About Us page (team photos, portfolio links), and
+      removed leftover template files ([\#65](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/65)).
 
 * **Review/mentoring contributions**:
     * Reviewed teammates' PRs with comments on
@@ -84,5 +89,3 @@ allergens and keep track of the ingredients they have at home, all through a com
     * Gave code review comments on classmates' iPs:
       [ip\#52](https://github.com/NUS-CS2113-AY2627-S1/ip/pull/52),
       [ip\#97](https://github.com/NUS-CS2113-AY2627-S1/ip/pull/97).
-    *     * Updated the README, website landing page and About Us page (team photos, portfolio links), and
-      removed leftover template files ([\#65](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/65)).

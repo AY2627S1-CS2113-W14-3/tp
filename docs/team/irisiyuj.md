@@ -43,3 +43,5 @@ scales ingredient quantities, flags possible allergens and tracks home stock.
     [PR #17](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/17),
     [PR #45](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/45),
     [PR #47](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/52)
+* **Contributions beyond the project team**:
+  * Reviewed another team's Developer Guide:[W13-4](https://github.com/NUS-CS2113-AY2627-S1/tp/pulls?q=is%3Aopen+is%3Apr+CS2113-W13-4+),[W12-1](https://github.com/NUS-CS2113-AY2627-S1/tp/pulls?q=is%3Aopen+is%3Apr+CS2113-W12-1+)
