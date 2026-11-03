@@ -13,6 +13,10 @@
 * AI assistance: Cheuk Yin ([cheuk-yin](https://github.com/cheuk-yin)) used Claude (Anthropic) to help draft
   the Architecture and Recipe persistence sections of this Developer Guide and their diagrams. All generated
   text was reviewed and checked against the code by Cheuk Yin.
+* AI assistance: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)) used Codex (OpenAI) to help
+  implement structured ingredients, `modify`, allergen warnings and `substitute`, and prepare their tests,
+  documentation, diagrams and his PPP. He defined the requirements, made the final design decisions,
+  and reviewed, understood, adapted and tested the AI-assisted work.
 
 * The guide structure and the serving-size, allergen and substitution diagrams were informed by the
   [AB3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html) and
@@ -22,8 +26,6 @@
   [FARE's common-allergen substitutions](https://www.foodallergy.org/resources/substitutions-common-allergens-pdf)
   and [Kids with Food Allergies](https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/).
   The lookup implementation and its quantities-unchanged contract are specific to WhatsCooking.
-* AI assistance: CAO JINGYUAN ([littlecrawler](https://github.com/littlecrawler)) used Codex to assist with
-  the substitution implementation, tests, his guide sections and diagrams.
 
 <a id="design--implementation"></a>
 
