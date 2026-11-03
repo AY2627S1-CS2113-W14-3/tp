@@ -58,13 +58,15 @@ allergens and keep track of the ingredients they have at home.
 
 * **Contributions to team-based tasks**:
     * Discussed and Clarified git topics and issues with team members during tutorials and in chats.
-    * Merged teammates' PRs after review
-      ([\#22](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/22),
-      [\#42](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)).
     * Tracked my work with issues assigned to the v1.0 and v2.0 milestones
       ([\#23](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/23),
       [\#28](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/28),
       [\#43](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/43)).
+
+* **Review/mentoring contributions**:
+    * Merged teammates' PRs after review
+      ([\#22](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/22),
+      [\#42](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)).
 
 * **Contributions beyond the project team**:
     * Reviewed other team's Developer Guide
