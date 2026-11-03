@@ -16,7 +16,7 @@ allergens and keep track of the ingredients they have at home, all through a com
           steps and note, e.g. `add egg taco, snack s/2 i/3 eggs st/Scramble egg n/Serve hot`.
         * Justification: every recipe enters the app through `add`, so `retrieve`, `modify`, `search`, allergen
           warnings and saving all depend on it.
-        * Every part is checked before anything is saved, so an invalid command never leaves a
+        * Highlights: every part is checked before anything is saved, so an invalid command never leaves a
           half-built recipe; prefixes such as `i/` are not mistaken inside words like `wasabi/`; each error says
           what to fix.
     * **New feature: edit an existing recipe (`edit`).**
@@ -24,7 +24,7 @@ allergens and keep track of the ingredients they have at home, all through a com
           by number or full name, with parts in any order,
           e.g. `edit egg taco i/2 5 corn tortillas st/1 Whisk the eggs`.
         * Justification: users previously had to delete and re-add a recipe to fix a typo or update it.
-        * Every new value is checked first and the changes are applied only together, so a rejected
+        * Highlights: every new value is checked first and the changes are applied only together, so a rejected
           `edit` never half-changes a recipe. It reuses `add`'s checks, so both commands accept exactly the same
           values.
     * **Enhancements to existing features:**
