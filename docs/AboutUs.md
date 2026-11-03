@@ -1,5 +1,13 @@
 # About us
 
+<style>
+table td:first-child img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+}
+</style>
+
 Display |     Name     | Github Profile | Portfolio
 --------|:------------:|:--------------:|:---------:
 ![](https://github.com/wunicorn21.png?size=100) |   Lim Sin    | [Github](https://github.com/wunicorn21) | [Portfolio](team/wunicorn21.md)
