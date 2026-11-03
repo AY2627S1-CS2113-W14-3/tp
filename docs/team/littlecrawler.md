@@ -30,12 +30,12 @@ alternatives and tracks home stock.
   without changing the save format
   ([issue #38](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/38),
   [PR #39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39)).
-* **Ingredient alternatives:** Implemented `substitute` with a limited complete-name catalogue,
-  immutable suggestions and cooking caveats. Complete-name matching prevents compound ingredients
-  such as `coconut milk` from receiving the `milk` rule. Suggestions preserve recipe quantities,
-  fields and ingredient numbering
+* **Ingredient substitution (`substitute`):** Implemented the command, the six-rule
+  `SubstitutionAdvisor` catalogue and immutable `SubstitutionSuggestion` results. Complete-name
+  matching prevents compound ingredients such as `coconut milk` from receiving the `milk` rule.
+  Suggestions include cooking caveats and preserve recipe quantities, fields and ingredient numbering
   ([issue #54](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/54),
-  [PR #56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56), merged).
+  [PR #56](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/56)).
 
 #### Testing and code quality
 
@@ -73,8 +73,10 @@ Implementation ([PR #39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39),
 #### Contributions to team tasks and reviews
 
 * Updated the About Us page and formatting
-  ([PR #7](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/7)).
-  Tracked my implementation and documentation work using the linked issues and PRs.
+  ([PR #7](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/7)). Finalized my PPP, clarified my AI
+  acknowledgement, and standardized team avatar sizes for v2.1
+  ([issue #66](https://github.com/AY2627S1-CS2113-W14-3/tp/issues/66),
+  [PR #67](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/67)).
 * Reviewed and merged teammates' PRs
   [#11](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/11),
   [#12](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/12),
@@ -83,29 +85,18 @@ Implementation ([PR #39](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/39),
   [#24](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/24),
   [#26](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/26),
   [#41](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/41),
-  [#48](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48) and
-  [#49](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/49).
-  Also merged the UML fixes in [PR #57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57).
-* Gave actionable review feedback on
-  [retrieval integer overflow](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/14#discussion_r4226851534),
-  [runtime checks alongside assertions](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/26#discussion_r4261657294)
-  and [stock-list encapsulation](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/41#discussion_r4356811269).
-  For stock expiry, identified
-  [mutation before failed removal](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48#discussion_r4390265577),
-  [floating-point residual batches](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48#discussion_r4390279801)
-  and [incorrect DG expectations](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48#discussion_r4390315672).
+  [#48](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/48),
+  [#49](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/49) and
+  [#57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57).
+* Helped with CI troubleshooting and merged the shared documentation update
+  ([PR #65](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/65)).
 
 #### Contributions beyond the project team
 
-Gave eight inline DG comments on 28 October across MishMash
-([review](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/15#pullrequestreview-5678828471),
-[fourth comment](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/15#discussion_r4399160912))
-and CakeQueue
-([review](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/6#pullrequestreview-5678750361),
-[fourth comment](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/6#discussion_r4399189385)).
-The feedback covered diagram readability, missing algorithm/storage explanations, command consistency
-and state transitions. Also reported missing diagrams in
-[GameVault](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/19#pullrequestreview-5678692505).
+Provided Developer Guide review comments for
+[CakeQueue (PR #6)](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/6#pullrequestreview-5678750361),
+[MishMash (PR #15)](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/15#pullrequestreview-5678828471)
+and [GameVault (PR #19)](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/19#pullrequestreview-5678692505).
 
 **AI assistance:** I used Codex (OpenAI) to help generate and revise code, tests, documentation, diagrams
 and this PPP. I defined the requirements, made the final design decisions, and reviewed, understood,
