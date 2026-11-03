@@ -2,7 +2,7 @@
 
 ## Overview
 
-What's Cooking is a desktop recipe manager for home cooks who prefer typing. Users store recipes with their
+WhatsCooking is a desktop recipe manager for home cooks who prefer typing. Users store recipes with their
 ingredients, steps and notes, find them quickly, resize them for a different number of servings, check possible
 allergens and keep track of the ingredients they have at home, all through a command-line interface.
 
