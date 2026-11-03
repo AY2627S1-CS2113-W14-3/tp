@@ -42,17 +42,20 @@ allergens and keep track of the ingredients they have at home, all through a com
 
 * **Contributions to the UG**:
     * Wrote the `add` and `edit` sections (formats, rules, examples, expected output and errors) and their
-      Command Summary entries.
-    * Wrote the introduction and "Notes about the command format", replacing the template placeholders.
+      Command Summary entries. 
+    * Wrote the introduction, "Notes about the command format" and the table of contents, and updated the
+      name-matching rules in `retrieve`, `delete`, `modify` and `substitute` for v2.1
+      ([\#70](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/70)).
 
 * **Contributions to the DG**:
     * Wrote the design subsection "Recipe input design" and the implementation subsection "Recipe creation and
       editing: `add` and `edit`" (flow, validation, alternatives considered and automated tests).
     * Added three UML diagrams: a class diagram of the recipe input classes, a sequence diagram for `add` and an
       activity diagram for `edit` ([\#57](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/57),
-      updated in [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)).
+      updated in [\#63](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/63)). 
     * Added the user stories, non-functional requirements, glossary terms and manual testing instructions for
-      `add` and `edit`.
+      `add` and `edit` up to v2.1, and the DG's table of contents
+      ([\#70](https://github.com/AY2627S1-CS2113-W14-3/tp/pull/70)).
 
 * **Contributions to team-based tasks**:
     * Planned and tracked my work with issues and milestones from v1.0 to v2.1
